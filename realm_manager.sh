@@ -11,7 +11,7 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 API_BASE_URL="https://realmrouter.cn/v1"
 
 # === ⚠️ 发布前请修改此 URL 为您的真实 GitHub 原始文件地址 ===
-UPDATE_URL="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/realm_manager.sh"
+UPDATE_URL="https://raw.githubusercontent.com/Yonghao-lucky/realm_manager/main/realm_manager.sh"
 
 
 # ================= Python Processor =================
@@ -159,6 +159,19 @@ def action_get_key(file_path):
     except Exception:
         sys.exit(1)
 
+def action_get_model(file_path):
+    data = load_json(file_path)
+    try:
+        if 'agents' in data and \
+           'defaults' in data['agents'] and \
+           'model' in data['agents']['defaults'] and \
+           'primary' in data['agents']['defaults']['model']:
+            print(data['agents']['defaults']['model']['primary'])
+        else:
+            sys.exit(1)
+    except Exception:
+        sys.exit(1)
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         sys.exit(1)
@@ -174,6 +187,8 @@ if __name__ == "__main__":
         action_switch_model(file_path, sys.argv[3])
     elif action == "get_key":
         action_get_key(file_path)
+    elif action == "get_model":
+        action_get_model(file_path)
 EOF
 
 # ================= Helper Functions =================
@@ -210,12 +225,12 @@ backup_config() {
 
 verify_api_key() {
     local key="$1"
+    local model_id="${2:-qwen3-max}" # 如果未指定，默认使用 qwen3-max
     echo -n "⏳ 正在验证 API Key 有效性... "
     
     # 构造测试请求数据
     # 注意：这里必须使用原始模型 ID，不能带 realmrouter/ 前缀
-    local test_model="qwen3-max"
-    local payload="{\"model\": \"$test_model\", \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}], \"max_tokens\": 1}"
+    local payload="{\"model\": \"$model_id\", \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}], \"max_tokens\": 1}"
     
     # 使用 /v1/chat/completions 接口验证
     local response
@@ -478,6 +493,18 @@ process_test_connectivity() {
     local current_key
     current_key=$(python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "get_key")
     
+    # 读取当前模型
+    local current_model
+    current_model=$(python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "get_model")
+    
+    # 去除 realmrouter/ 前缀
+    local real_model_id=${current_model#realmrouter/}
+    
+    # 如果没获取到，默认回退到 qwen3-max
+    if [ -z "$real_model_id" ]; then
+        real_model_id="qwen3-max"
+    fi
+
     if [ -z "$current_key" ]; then
         echo "❌ Error: 未找到已配置的 API Key。"
         echo "请先执行 [1] 安装/重置 或 [2] 更换 Key。"
@@ -487,10 +514,10 @@ process_test_connectivity() {
     
     echo "正在测试当前 Key 的连通性..."
     echo "API Endpoint: $API_BASE_URL/chat/completions"
-    echo "测试模型: qwen3-max"
+    echo "测试模型: $real_model_id"
     echo "----------------------------------------"
     
-    verify_api_key "$current_key"
+    verify_api_key "$current_key" "$real_model_id"
     local result=$?
     
     echo "----------------------------------------"
