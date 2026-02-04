@@ -3,8 +3,6 @@
 # OpenClaw RealmRouter Configuration Manager
 # Description: 用于管理 OpenClaw 配置文件，支持 RealmRouter 增量注入、Key 验证及模型管理。
 
-set -e
-
 # ================= Configuration =================
 CONFIG_DIR="$HOME/.openclaw"
 CONFIG_FILE="$CONFIG_DIR/openclaw.json"
@@ -17,7 +15,7 @@ UPDATE_URL="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/realm
 
 
 # ================= Python Processor =================
-read -r -d '' PYTHON_SCRIPT << 'EOF'
+read -r -d '' PYTHON_SCRIPT << 'EOF' || true
 import sys
 import json
 import os
