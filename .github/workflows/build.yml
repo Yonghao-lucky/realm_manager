@@ -1,0 +1,77 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  build:
+    name: Build binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: realm_manager_linux
+            asset_name: realm_manager_linux
+          - os: macos-latest
+            artifact_name: realm_manager_macos
+            asset_name: realm_manager_macos
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install shc (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo add-apt-repository ppa:neurobin/ppa -y
+        sudo apt-get update
+        sudo apt-get install shc -y
+
+    - name: Install shc (macOS)
+      if: runner.os == 'macOS'
+      run: brew install shc
+
+    - name: Compile script
+      run: |
+        mkdir -p build
+        shc -f src/realm_manager.sh -o build/${{ matrix.artifact_name }}
+        
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: build/${{ matrix.artifact_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Download Linux artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: realm_manager_linux
+        path: ./artifacts
+
+    - name: Download macOS artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: realm_manager_macos
+        path: ./artifacts
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          ./artifacts/realm_manager_linux
+          ./artifacts/realm_manager_macos
+        draft: false
+        prerelease: false
+        generate_release_notes: true

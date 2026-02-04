@@ -23,29 +23,33 @@
 
 ## 快速开始
 
-### 1. 下载脚本
+### 方式一：下载二进制文件（推荐）
 
-您可以通过 `curl` 或 `wget` 下载本脚本，或者直接克隆本仓库。
+无需安装额外依赖，直接下载对应系统的可执行文件即可运行。
+
+**Linux:**
+```bash
+curl -L -o realm_manager https://github.com/Yonghao-lucky/realm_manager/releases/latest/download/realm_manager_linux
+chmod +x realm_manager
+./realm_manager
+```
+
+**macOS:**
+```bash
+curl -L -o realm_manager https://github.com/Yonghao-lucky/realm_manager/releases/latest/download/realm_manager_macos
+chmod +x realm_manager
+./realm_manager
+```
+
+### 方式二：使用源码运行
+
+如果您熟悉 Shell 脚本，也可以直接运行源码。
 
 ```bash
 git clone https://github.com/Yonghao-lucky/realm_manager.git
 cd realm_manager
-```
-
-### 2. 添加执行权限
-
-在使用之前，请确保脚本具有可执行权限：
-
-```bash
-chmod +x realm_manager.sh
-```
-
-### 3. 运行脚本
-
-直接运行脚本即可进入交互式菜单：
-
-```bash
-./realm_manager.sh
+chmod +x src/realm_manager.sh
+./src/realm_manager.sh
 ```
 
 ## 使用指南

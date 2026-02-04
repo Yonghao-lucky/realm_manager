@@ -11,7 +11,7 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 API_BASE_URL="https://realmrouter.cn/v1"
 
 # === ⚠️ 发布前请修改此 URL 为您的真实 GitHub 原始文件地址 ===
-UPDATE_URL="https://raw.githubusercontent.com/Yonghao-lucky/realm_manager/main/realm_manager.sh"
+UPDATE_URL="https://raw.githubusercontent.com/Yonghao-lucky/realm_manager/main/src/realm_manager.sh"
 README_URL="https://raw.githubusercontent.com/Yonghao-lucky/realm_manager/main/README.md"
 
 
