@@ -99,6 +99,14 @@ chmod +x src/realm_manager.sh
 ### [6] 更新脚本
 检查并下载脚本的最新版本，确保您拥有最新的模型列表和功能修复。
 
+## ⚠️ 重要提示
+
+每次使用本工具修改配置（如安装、切换模型、更换 Key）后，**必须手动重启 OpenClaw 网关**才能使更改生效：
+
+```bash
+openclaw gateway restart
+```
+
 ## 前置要求
 
 *   **操作系统**: Linux 或 macOS (支持 Bash 环境)

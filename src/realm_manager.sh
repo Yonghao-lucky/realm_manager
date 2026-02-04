@@ -280,6 +280,7 @@ restore_backup() {
         local selected_backup="${backups[$((choice-1))]}"
         cp "$BACKUP_DIR/$selected_backup" "$CONFIG_FILE"
         echo "✅ 已还原备份: $selected_backup"
+        echo "⚠️ 请手动执行 'openclaw gateway restart' 以应用更改。"
     fi
 }
 
@@ -290,6 +291,7 @@ switch_to() {
     echo "正在切换到模型: $model_id ..."
     backup_config
     python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "switch_model" "$model_id"
+    echo "⚠️ 请手动执行 'openclaw gateway restart' 以应用更改。"
     read -p "按回车键返回主菜单..."
 }
 
@@ -467,6 +469,7 @@ process_install() {
     if verify_api_key "$api_key"; then
         backup_config
         python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "install" "$api_key"
+        echo "⚠️ 请手动执行 'openclaw gateway restart' 以应用更改。"
         read -p "按回车键继续..."
     fi
 }
@@ -483,6 +486,7 @@ process_update_key() {
     if verify_api_key "$api_key"; then
         backup_config
         python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "update_key" "$api_key"
+        echo "⚠️ 请手动执行 'openclaw gateway restart' 以应用更改。"
         read -p "按回车键继续..."
     fi
 }
