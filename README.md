@@ -107,11 +107,48 @@ chmod +x realm_manager.sh
 
 目前脚本内置支持多种主流模型，包括但不限于：
 
-*   **Anthropic**: Claude 3.5 Sonnet, Claude 3.7 Opus 等
-*   **DeepSeek**: DeepSeek R1, DeepSeek V3 等
-*   **Google**: Gemini 1.5 Pro, Gemini 1.5 Flash 等
-*   **OpenAI**: GPT-4o, GPT-4o-mini 等
-*   **Qwen**: Qwen 2.5 Max, Qwen 2.5 Coder 等
+### Anthropic
+*   `claude-opus-4-5-thinking`
+*   `claude-sonnet-4-5`
+*   `claude-sonnet-4-5-thinking`
+
+### DeepSeek
+*   `deepseek-ai/DeepSeek-R1`
+*   `deepseek-ai/DeepSeek-R1-0528`
+*   `deepseek-ai/DeepSeek-V3.1`
+*   `deepseek-ai/DeepSeek-V3.1-Terminus`
+*   `deepseek-ai/DeepSeek-V3.2-Exp`
+
+### Google
+*   `gemini-3-flash-preview`
+*   `gemini-3-pro-preview`
+*   `gemini-2.5-flash`
+
+### Minimax
+*   `MiniMaxAI/MiniMax-M2.1`
+
+### Moonshot
+*   `moonshotai/Kimi-K2.5`
+*   `moonshotai/Kimi-K2-Thinking`
+
+### OpenAI
+*   `gpt-5.2`
+*   `openai/gpt-oss-120b`
+
+### 字节跳动 (ByteDance)
+*   `doubao-seed-code-preview-251028`
+
+### Z.Ai (GLM)
+*   `zai-org/GLM-4.7`
+*   `zai-org/GLM-4.6V`
+
+### Qwen (通义千问)
+*   `qwen3-coder-plus`
+*   `qwen3-max` (默认)
+*   `qwen3-max-preview`
+*   `qwen3-vl-plus`
+*   `Qwen/Qwen3-Coder-480B-A35B-Instruct`
+*   `qwen3-vl-max`
 
 *(具体模型列表请以脚本内实际显示为准)*
 
