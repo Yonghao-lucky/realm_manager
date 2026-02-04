@@ -23,33 +23,20 @@
 
 ## 快速开始
 
-### 方式一：下载二进制文件（推荐）
-
 无需安装额外依赖，直接下载对应系统的可执行文件即可运行。
 
-**Linux:**
+### Linux 用户
 ```bash
 curl -L -o realm_manager https://github.com/Yonghao-lucky/realm_manager/releases/latest/download/realm_manager_linux
 chmod +x realm_manager
 ./realm_manager
 ```
 
-**macOS:**
+### macOS 用户
 ```bash
 curl -L -o realm_manager https://github.com/Yonghao-lucky/realm_manager/releases/latest/download/realm_manager_macos
 chmod +x realm_manager
 ./realm_manager
-```
-
-### 方式二：使用源码运行
-
-如果您熟悉 Shell 脚本，也可以直接运行源码。
-
-```bash
-git clone https://github.com/Yonghao-lucky/realm_manager.git
-cd realm_manager
-chmod +x src/realm_manager.sh
-./src/realm_manager.sh
 ```
 
 ## 使用指南
