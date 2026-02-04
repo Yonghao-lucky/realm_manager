@@ -12,6 +12,7 @@ API_BASE_URL="https://realmrouter.cn/v1"
 
 # === ⚠️ 发布前请修改此 URL 为您的真实 GitHub 原始文件地址 ===
 UPDATE_URL="https://raw.githubusercontent.com/Yonghao-lucky/realm_manager/main/realm_manager.sh"
+README_URL="https://raw.githubusercontent.com/Yonghao-lucky/realm_manager/main/README.md"
 
 
 # ================= Python Processor =================
@@ -542,7 +543,17 @@ process_update_script() {
             # 覆盖当前脚本
             mv "$temp_file" "$0"
             chmod +x "$0"
-            echo "✅ 脚本已更新成功！请重新运行脚本以加载新功能。"
+            echo "✅ 脚本核心文件已更新。"
+            
+            # 尝试更新 README.md
+            echo "正在获取最新文档..."
+            if curl -sSL "$README_URL" -o "README.md"; then
+                echo "✅ 文档(README.md)已更新。"
+            else
+                echo "⚠️ 文档更新失败，但这不影响脚本使用。"
+            fi
+            
+            echo "更新完成！请重新运行脚本以加载新功能。"
             exit 0
         else
             echo "❌ 下载的文件似乎已损坏或不是有效的脚本。"
