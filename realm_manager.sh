@@ -212,16 +212,29 @@ verify_api_key() {
     local key="$1"
     echo -n "⏳ 正在验证 API Key 有效性... "
     
-    # 使用 /v1/models 接口验证
+    # 构造测试请求数据
+    local test_model="realmrouter/qwen3-max"
+    local payload="{\"model\": \"$test_model\", \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}], \"max_tokens\": 1}"
+    
+    # 使用 /v1/chat/completions 接口验证
+    local response
     local http_code
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $key" "$API_BASE_URL/models")
+    
+    # 捕获 HTTP 状态码和响应体
+    response=$(curl -s -w "\n%{http_code}" -X POST "$API_BASE_URL/chat/completions" \
+        -H "Authorization: Bearer $key" \
+        -H "Content-Type: application/json" \
+        -d "$payload")
+        
+    http_code=$(echo "$response" | tail -n1)
+    # body=$(echo "$response" | sed '$d') # 如果需要调试可以打印 body
     
     if [ "$http_code" -eq 200 ]; then
         echo "✅ 成功。"
         return 0
     else
         echo "⚠️ 失败 (HTTP $http_code)。"
-        echo "可能原因: Key 无效、余额不足或网络问题。"
+        echo "可能原因: Key 无效、余额不足、模型名称错误或网络问题。"
         read -p "是否强制继续？(y/N): " force
         if [[ "$force" =~ ^[Yy]$ ]]; then
             return 0
@@ -472,7 +485,8 @@ process_test_connectivity() {
     fi
     
     echo "正在测试当前 Key 的连通性..."
-    echo "API Endpoint: $API_BASE_URL/models"
+    echo "API Endpoint: $API_BASE_URL/chat/completions"
+    echo "测试模型: realmrouter/qwen3-max"
     echo "----------------------------------------"
     
     verify_api_key "$current_key"
