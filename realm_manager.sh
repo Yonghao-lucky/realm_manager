@@ -148,6 +148,19 @@ def action_switch_model(file_path, model_id):
         print(f"Error: 切换模型失败: {e}")
         sys.exit(1)
 
+def action_get_key(file_path):
+    data = load_json(file_path)
+    try:
+        if 'models' in data and \
+           'providers' in data['models'] and \
+           'realmrouter' in data['models']['providers'] and \
+           'apiKey' in data['models']['providers']['realmrouter']:
+            print(data['models']['providers']['realmrouter']['apiKey'])
+        else:
+            sys.exit(1)
+    except Exception:
+        sys.exit(1)
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         sys.exit(1)
@@ -161,6 +174,8 @@ if __name__ == "__main__":
         action_update_key(file_path, sys.argv[3])
     elif action == "switch_model":
         action_switch_model(file_path, sys.argv[3])
+    elif action == "get_key":
+        action_get_key(file_path)
 EOF
 
 # ================= Helper Functions =================
@@ -444,6 +459,37 @@ process_update_key() {
     fi
 }
 
+process_test_connectivity() {
+    echo -e "\n=== 测试 Key 连通性 ==="
+    
+    # 从配置文件读取当前 Key
+    local current_key
+    current_key=$(python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "get_key")
+    
+    if [ -z "$current_key" ]; then
+        echo "❌ Error: 未找到已配置的 API Key。"
+        echo "请先执行 [1] 安装/重置 或 [2] 更换 Key。"
+        read -p "按回车键返回..."
+        return
+    fi
+    
+    echo "正在测试当前 Key 的连通性..."
+    echo "API Endpoint: $API_BASE_URL/models"
+    echo "----------------------------------------"
+    
+    verify_api_key "$current_key"
+    local result=$?
+    
+    echo "----------------------------------------"
+    if [ $result -eq 0 ]; then
+        echo "✅ 测试通过: Key 有效且连接正常。"
+    else
+        echo "❌ 测试失败: 无法连接或 Key 无效。"
+    fi
+    
+    read -p "按回车键继续..."
+}
+
 process_update_script() {
     echo -e "\n=== 更新脚本 ==="
     echo "正在从远程仓库获取最新版本..."
@@ -469,10 +515,6 @@ process_update_script() {
 }
 
 # ================= Main Menu =================
-if [[ $- != *i* ]] && [[ -z "$TERM" ]]; then
-    : # Non-interactive mode
-fi
-
 # Pre-flight Check
 check_env
 
@@ -485,7 +527,8 @@ while true; do
     echo " [2] 更换 Key  (更新 API Key)"
     echo " [3] 切换模型  (修改默认 AI 模型)"
     echo " [4] 还原备份  (从历史备份恢复)"
-    echo " [5] 更新脚本  (获取最新版本)"
+    echo " [5] 测试连通  (测试 Key 有效性)"
+    echo " [6] 更新脚本  (获取最新版本)"
     echo " [q] 退出"
     
     echo ""
@@ -496,7 +539,8 @@ while true; do
         2) process_update_key ;;
         3) process_switch_model_menu ;;
         4) restore_backup; read -p "按回车键继续..." ;;
-        5) process_update_script ;;
+        5) process_test_connectivity ;;
+        6) process_update_script ;;
         q|Q) echo "Bye!"; exit 0 ;;
         *) echo "❌ 无效的输入"; sleep 1 ;;
     esac
