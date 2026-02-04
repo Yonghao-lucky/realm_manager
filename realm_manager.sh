@@ -213,7 +213,8 @@ verify_api_key() {
     echo -n "⏳ 正在验证 API Key 有效性... "
     
     # 构造测试请求数据
-    local test_model="realmrouter/qwen3-max"
+    # 注意：这里必须使用原始模型 ID，不能带 realmrouter/ 前缀
+    local test_model="qwen3-max"
     local payload="{\"model\": \"$test_model\", \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}], \"max_tokens\": 1}"
     
     # 使用 /v1/chat/completions 接口验证
@@ -486,7 +487,7 @@ process_test_connectivity() {
     
     echo "正在测试当前 Key 的连通性..."
     echo "API Endpoint: $API_BASE_URL/chat/completions"
-    echo "测试模型: realmrouter/qwen3-max"
+    echo "测试模型: qwen3-max"
     echo "----------------------------------------"
     
     verify_api_key "$current_key"
