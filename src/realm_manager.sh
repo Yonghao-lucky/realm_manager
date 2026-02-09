@@ -53,6 +53,7 @@ def get_realmrouter_config(api_key):
         "models": [
             # Anthropic
             { "id": "claude-opus-4-5-thinking", "name": "Claude Opus 4.5 Thinking" },
+            { "id": "claude-opus-4-6-thinking", "name": "Claude Opus 4.6 Thinking" },
             { "id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5" },
             { "id": "claude-sonnet-4-5-thinking", "name": "Claude Sonnet 4.5 Thinking" },
             
@@ -77,6 +78,8 @@ def get_realmrouter_config(api_key):
             
             # OpenAI
             { "id": "gpt-5.2", "name": "GPT-5.2" },
+            { "id": "gpt-5.2-codex", "name": "GPT-5.2 Codex" },
+            { "id": "gpt-5.3-codex", "name": "GPT-5.3 Codex" },
             { "id": "openai/gpt-oss-120b", "name": "GPT OSS 120B" },
             
             # 字节跳动 (ByteDance)
@@ -299,13 +302,15 @@ select_anthropic() {
     while true; do
         echo -e "\n--- Anthropic Models ---"
         echo "1. claude-opus-4-5-thinking"
-        echo "2. claude-sonnet-4-5"
-        echo "3. claude-sonnet-4-5-thinking"
+        echo "2. claude-opus-4-6-thinking"
+        echo "3. claude-sonnet-4-5"
+        echo "4. claude-sonnet-4-5-thinking"
         echo "0. 返回上级"
         read -p "Select Model: " c; case $c in
             1) switch_to "claude-opus-4-5-thinking"; return ;;
-            2) switch_to "claude-sonnet-4-5"; return ;;
-            3) switch_to "claude-sonnet-4-5-thinking"; return ;;
+            2) switch_to "claude-opus-4-6-thinking"; return ;;
+            3) switch_to "claude-sonnet-4-5"; return ;;
+            4) switch_to "claude-sonnet-4-5-thinking"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
@@ -372,11 +377,15 @@ select_openai() {
     while true; do
         echo -e "\n--- OpenAI Models ---"
         echo "1. GPT-5.2"
-        echo "2. GPT OSS 120B"
+        echo "2. GPT-5.2 Codex"
+        echo "3. GPT-5.3 Codex"
+        echo "4. GPT OSS 120B"
         echo "0. 返回上级"
         read -p "Select Model: " c; case $c in
             1) switch_to "gpt-5.2"; return ;;
-            2) switch_to "openai/gpt-oss-120b"; return ;;
+            2) switch_to "gpt-5.2-codex"; return ;;
+            3) switch_to "gpt-5.3-codex"; return ;;
+            4) switch_to "openai/gpt-oss-120b"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
