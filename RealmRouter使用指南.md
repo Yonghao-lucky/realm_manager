@@ -46,9 +46,10 @@
 RealmRouter 精选了以下优质模型，满足您不同的业务需求（官网提供更多大模型供选择）：
 
 ### Anthropic
+*   `claude-haiku-4.5`
 *   `claude-opus-4-5-thinking`
+*   `claude-opus-4-6-thinking`
 *   `claude-sonnet-4-5`
-*   `claude-sonnet-4-5-thinking`
 
 ### DeepSeek (深度求索)
 *   `deepseek-ai/DeepSeek-R1`
@@ -56,11 +57,6 @@ RealmRouter 精选了以下优质模型，满足您不同的业务需求（官�
 *   `deepseek-ai/DeepSeek-V3.1`
 *   `deepseek-ai/DeepSeek-V3.1-Terminus`
 *   `deepseek-ai/DeepSeek-V3.2-Exp`
-
-### Google
-*   `gemini-3-flash-preview`
-*   `gemini-3-pro-preview`
-*   `gemini-2.5-flash`
 
 ### Minimax
 *   `MiniMaxAI/MiniMax-M2.1`
@@ -71,8 +67,9 @@ RealmRouter 精选了以下优质模型，满足您不同的业务需求（官�
 
 ### OpenAI
 *   `gpt-5.2`
-*   `openai/gpt-oss-120b`
+*   `gpt-5.2-codex`
 *   `gpt-5.3-codex`
+*   `openai/gpt-oss-120b`
 
 ### 字节跳动 (ByteDance)
 *   `doubao-seed-code-preview-251028`
@@ -87,6 +84,7 @@ RealmRouter 精选了以下优质模型，满足您不同的业务需求（官�
 *   `qwen3-max-preview`
 *   `qwen3-vl-plus`
 *   `Qwen/Qwen3-Coder-480B-A35B-Instruct`
+*   `Qwen/Qwen3-Coder-Next`
 *   `qwen3-vl-max`
 
 ---

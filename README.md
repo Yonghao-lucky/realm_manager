@@ -120,9 +120,10 @@ openclaw gateway restart
 目前脚本内置支持多种主流模型，包括但不限于：
 
 ### Anthropic
+*   `claude-haiku-4.5`
 *   `claude-opus-4-5-thinking`
+*   `claude-opus-4-6-thinking`
 *   `claude-sonnet-4-5`
-*   `claude-sonnet-4-5-thinking`
 
 ### DeepSeek
 *   `deepseek-ai/DeepSeek-R1`
@@ -130,11 +131,6 @@ openclaw gateway restart
 *   `deepseek-ai/DeepSeek-V3.1`
 *   `deepseek-ai/DeepSeek-V3.1-Terminus`
 *   `deepseek-ai/DeepSeek-V3.2-Exp`
-
-### Google
-*   `gemini-3-flash-preview`
-*   `gemini-3-pro-preview`
-*   `gemini-2.5-flash`
 
 ### Minimax
 *   `MiniMaxAI/MiniMax-M2.1`
@@ -145,6 +141,8 @@ openclaw gateway restart
 
 ### OpenAI
 *   `gpt-5.2`
+*   `gpt-5.2-codex`
+*   `gpt-5.3-codex`
 *   `openai/gpt-oss-120b`
 
 ### 字节跳动 (ByteDance)
@@ -160,6 +158,7 @@ openclaw gateway restart
 *   `qwen3-max-preview`
 *   `qwen3-vl-plus`
 *   `Qwen/Qwen3-Coder-480B-A35B-Instruct`
+*   `Qwen/Qwen3-Coder-Next`
 *   `qwen3-vl-max`
 
 *(具体模型列表请以脚本内实际显示为准)*

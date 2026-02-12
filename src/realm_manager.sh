@@ -4,6 +4,8 @@
 # Description: 用于管理 OpenClaw 配置文件，支持 RealmRouter 增量注入、Key 验证及模型管理。
 
 # ================= Configuration =================
+SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 CONFIG_DIR="$HOME/.openclaw"
 CONFIG_FILE="$CONFIG_DIR/openclaw.json"
 BACKUP_DIR="$CONFIG_DIR/backups"
@@ -52,10 +54,10 @@ def get_realmrouter_config(api_key):
         "api": "openai-completions",
         "models": [
             # Anthropic
+            { "id": "claude-haiku-4.5", "name": "Claude Haiku 4.5" },
             { "id": "claude-opus-4-5-thinking", "name": "Claude Opus 4.5 Thinking" },
             { "id": "claude-opus-4-6-thinking", "name": "Claude Opus 4.6 Thinking" },
             { "id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5" },
-            { "id": "claude-sonnet-4-5-thinking", "name": "Claude Sonnet 4.5 Thinking" },
             
             # DeepSeek
             { "id": "deepseek-ai/DeepSeek-R1", "name": "DeepSeek R1" },
@@ -63,11 +65,6 @@ def get_realmrouter_config(api_key):
             { "id": "deepseek-ai/DeepSeek-V3.1", "name": "DeepSeek V3.1" },
             { "id": "deepseek-ai/DeepSeek-V3.1-Terminus", "name": "DeepSeek V3.1 Terminus" },
             { "id": "deepseek-ai/DeepSeek-V3.2-Exp", "name": "DeepSeek V3.2 Exp" },
-            
-            # Google
-            { "id": "gemini-3-flash-preview", "name": "Gemini 3 Flash Preview" },
-            { "id": "gemini-3-pro-preview", "name": "Gemini 3 Pro Preview" },
-            { "id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash" },
             
             # Minimax
             { "id": "MiniMaxAI/MiniMax-M2.1", "name": "MiniMax M2.1" },
@@ -95,6 +92,7 @@ def get_realmrouter_config(api_key):
             { "id": "qwen3-max-preview", "name": "Qwen3 Max Preview" },
             { "id": "qwen3-vl-plus", "name": "Qwen3 VL Plus" },
             { "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct", "name": "Qwen3 Coder 480B" },
+            { "id": "Qwen/Qwen3-Coder-Next", "name": "Qwen3 Coder Next" },
             { "id": "qwen3-vl-max", "name": "Qwen3 VL Max" }
         ]
     }
@@ -230,6 +228,7 @@ backup_config() {
 verify_api_key() {
     local key="$1"
     local model_id="${2:-qwen3-max}" # 如果未指定，默认使用 qwen3-max
+    local silent="${3:-false}"  # 第三个参数：静默模式（不询问是否强制继续）
     echo -n "⏳ 正在验证 API Key 有效性... "
     
     # 构造测试请求数据
@@ -244,17 +243,22 @@ verify_api_key() {
     response=$(curl -s -w "\n%{http_code}" -X POST "$API_BASE_URL/chat/completions" \
         -H "Authorization: Bearer $key" \
         -H "Content-Type: application/json" \
-        -d "$payload")
+        -d "$payload" 2>/dev/null)
         
     http_code=$(echo "$response" | tail -n1)
     # body=$(echo "$response" | sed '$d') # 如果需要调试可以打印 body
     
-    if [ "$http_code" -eq 200 ]; then
+    # 安全的字符串比较，避免 http_code 为空或非数字时报错
+    if [ "$http_code" = "200" ]; then
         echo "✅ 成功。"
         return 0
     else
-        echo "⚠️ 失败 (HTTP $http_code)。"
+        echo "⚠️ 失败 (HTTP ${http_code:-无响应})。"
         echo "可能原因: Key 无效、余额不足、模型名称错误或网络问题。"
+        # 静默模式下直接返回失败，不询问用户
+        if [ "$silent" = "true" ]; then
+            return 1
+        fi
         read -p "是否强制继续？(y/N): " force
         if [[ "$force" =~ ^[Yy]$ ]]; then
             return 0
@@ -301,16 +305,16 @@ switch_to() {
 select_anthropic() {
     while true; do
         echo -e "\n--- Anthropic Models ---"
-        echo "1. claude-opus-4-5-thinking"
-        echo "2. claude-opus-4-6-thinking"
-        echo "3. claude-sonnet-4-5"
-        echo "4. claude-sonnet-4-5-thinking"
+        echo "1. claude-haiku-4.5"
+        echo "2. claude-opus-4-5-thinking"
+        echo "3. claude-opus-4-6-thinking"
+        echo "4. claude-sonnet-4-5"
         echo "0. 返回上级"
         read -p "Select Model: " c; case $c in
-            1) switch_to "claude-opus-4-5-thinking"; return ;;
-            2) switch_to "claude-opus-4-6-thinking"; return ;;
-            3) switch_to "claude-sonnet-4-5"; return ;;
-            4) switch_to "claude-sonnet-4-5-thinking"; return ;;
+            1) switch_to "claude-haiku-4.5"; return ;;
+            2) switch_to "claude-opus-4-5-thinking"; return ;;
+            3) switch_to "claude-opus-4-6-thinking"; return ;;
+            4) switch_to "claude-sonnet-4-5"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
@@ -330,21 +334,6 @@ select_deepseek() {
             3) switch_to "deepseek-ai/DeepSeek-V3.1"; return ;;
             4) switch_to "deepseek-ai/DeepSeek-V3.1-Terminus"; return ;;
             5) switch_to "deepseek-ai/DeepSeek-V3.2-Exp"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
-
-select_google() {
-    while true; do
-        echo -e "\n--- Google Models ---"
-        echo "1. Gemini 3 Flash Preview"
-        echo "2. Gemini 3 Pro Preview"
-        echo "3. Gemini 2.5 Flash"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "gemini-3-flash-preview"; return ;;
-            2) switch_to "gemini-3-pro-preview"; return ;;
-            3) switch_to "gemini-2.5-flash"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
@@ -423,6 +412,7 @@ select_qwen() {
         echo "4. Qwen3 VL Plus"
         echo "5. Qwen3 VL Max"
         echo "6. Qwen3 Coder 480B"
+        echo "7. Qwen3 Coder Next"
         echo "0. 返回上级"
         read -p "Select Model: " c; case $c in
             1) switch_to "qwen3-max"; return ;;
@@ -431,6 +421,7 @@ select_qwen() {
             4) switch_to "qwen3-vl-plus"; return ;;
             5) switch_to "qwen3-vl-max"; return ;;
             6) switch_to "Qwen/Qwen3-Coder-480B-A35B-Instruct"; return ;;
+            7) switch_to "Qwen/Qwen3-Coder-Next"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
@@ -440,26 +431,24 @@ process_switch_model_menu() {
         echo -e "\n=== 切换默认模型 (按发行商) ==="
         echo " [1] Anthropic (Claude)"
         echo " [2] DeepSeek"
-        echo " [3] Google (Gemini)"
-        echo " [4] Minimax"
-        echo " [5] Moonshot (Kimi)"
-        echo " [6] OpenAI"
-        echo " [7] 字节跳动 (Doubao)"
-        echo " [8] Z.Ai (GLM)"
-        echo " [9] Qwen (通义千问)"
+        echo " [3] Minimax"
+        echo " [4] Moonshot (Kimi)"
+        echo " [5] OpenAI"
+        echo " [6] 字节跳动 (Doubao)"
+        echo " [7] Z.Ai (GLM)"
+        echo " [8] Qwen (通义千问)"
         echo " [0] 返回主菜单"
         
-        read -p "请输入发行商编号 [0-9]: " p_choice
+        read -p "请输入发行商编号 [0-8]: " p_choice
         case $p_choice in
             1) select_anthropic ;;
             2) select_deepseek ;;
-            3) select_google ;;
-            4) select_minimax ;;
-            5) select_moonshot ;;
-            6) select_openai ;;
-            7) select_bytedance ;;
-            8) select_zai ;;
-            9) select_qwen ;;
+            3) select_minimax ;;
+            4) select_moonshot ;;
+            5) select_openai ;;
+            6) select_bytedance ;;
+            7) select_zai ;;
+            8) select_qwen ;;
             0) return ;;
             *) echo "❌ 无效的选择" ;;
         esac
@@ -531,7 +520,7 @@ process_test_connectivity() {
     echo "测试模型: $real_model_id"
     echo "----------------------------------------"
     
-    verify_api_key "$current_key" "$real_model_id"
+    verify_api_key "$current_key" "$real_model_id" "true"
     local result=$?
     
     echo "----------------------------------------"
@@ -554,13 +543,13 @@ process_update_script() {
         # 简单检查下载的文件是否完整 (比如包含特定关键词)
         if grep -q "OpenClaw RealmRouter Configuration Manager" "$temp_file"; then
             # 覆盖当前脚本
-            mv "$temp_file" "$0"
-            chmod +x "$0"
+            mv "$temp_file" "$SCRIPT_PATH"
+            chmod +x "$SCRIPT_PATH"
             echo "✅ 脚本核心文件已更新。"
             
             # 尝试更新 README.md
             echo "正在获取最新文档..."
-            if curl -sSL "$README_URL" -o "README.md"; then
+            if curl -sSL "$README_URL" -o "$SCRIPT_DIR/../README.md"; then
                 echo "✅ 文档(README.md)已更新。"
             else
                 echo "⚠️ 文档更新失败，但这不影响脚本使用。"
