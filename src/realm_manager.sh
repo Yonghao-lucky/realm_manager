@@ -58,6 +58,8 @@ def get_realmrouter_config(api_key):
             { "id": "claude-opus-4-5-thinking", "name": "Claude Opus 4.5 Thinking" },
             { "id": "claude-opus-4-6-thinking", "name": "Claude Opus 4.6 Thinking" },
             { "id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5" },
+            { "id": "claude-opus-4.6", "name": "Claude Opus 4.6" },
+            { "id": "claude-sonnet-4.6", "name": "Claude Sonnet 4.6" },
             
             # DeepSeek
             { "id": "deepseek-ai/DeepSeek-R1", "name": "DeepSeek R1" },
@@ -66,8 +68,13 @@ def get_realmrouter_config(api_key):
             { "id": "deepseek-ai/DeepSeek-V3.1-Terminus", "name": "DeepSeek V3.1 Terminus" },
             { "id": "deepseek-ai/DeepSeek-V3.2-Exp", "name": "DeepSeek V3.2 Exp" },
             
+            # Google
+            { "id": "gemini-3.1-pro-high", "name": "Gemini 3.1 Pro High" },
+            { "id": "gemini-3.1-pro-low", "name": "Gemini 3.1 Pro Low" },
+            
             # Minimax
             { "id": "MiniMaxAI/MiniMax-M2.1", "name": "MiniMax M2.1" },
+            { "id": "MiniMaxAI/MiniMax-M2.5", "name": "MiniMax M2.5" },
             
             # Moonshot
             { "id": "moonshotai/Kimi-K2.5", "name": "Kimi K2.5" },
@@ -85,6 +92,7 @@ def get_realmrouter_config(api_key):
             # Z.Ai
             { "id": "zai-org/GLM-4.7", "name": "GLM 4.7" },
             { "id": "zai-org/GLM-4.6V", "name": "GLM 4.6V" },
+            { "id": "zai-org/GLM-5", "name": "GLM 5" },
             
             # Qwen
             { "id": "qwen3-coder-plus", "name": "Qwen3 Coder Plus" },
@@ -93,6 +101,7 @@ def get_realmrouter_config(api_key):
             { "id": "qwen3-vl-plus", "name": "Qwen3 VL Plus" },
             { "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct", "name": "Qwen3 Coder 480B" },
             { "id": "Qwen/Qwen3-Coder-Next", "name": "Qwen3 Coder Next" },
+            { "id": "Qwen/Qwen3.5", "name": "Qwen3.5" },
             { "id": "qwen3-vl-max", "name": "Qwen3 VL Max" }
         ]
     }
@@ -309,12 +318,16 @@ select_anthropic() {
         echo "2. claude-opus-4-5-thinking"
         echo "3. claude-opus-4-6-thinking"
         echo "4. claude-sonnet-4-5"
+        echo "5. claude-opus-4.6"
+        echo "6. claude-sonnet-4.6"
         echo "0. 返回上级"
         read -p "Select Model: " c; case $c in
             1) switch_to "claude-haiku-4.5"; return ;;
             2) switch_to "claude-opus-4-5-thinking"; return ;;
             3) switch_to "claude-opus-4-6-thinking"; return ;;
             4) switch_to "claude-sonnet-4-5"; return ;;
+            5) switch_to "claude-opus-4.6"; return ;;
+            6) switch_to "claude-sonnet-4.6"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
@@ -338,13 +351,28 @@ select_deepseek() {
     done
 }
 
+select_google() {
+    while true; do
+        echo -e "\n--- Google Models ---"
+        echo "1. Gemini 3.1 Pro High"
+        echo "2. Gemini 3.1 Pro Low"
+        echo "0. 返回上级"
+        read -p "Select Model: " c; case $c in
+            1) switch_to "gemini-3.1-pro-high"; return ;;
+            2) switch_to "gemini-3.1-pro-low"; return ;;
+            0) return ;; *) echo "无效选择" ;; esac
+    done
+}
+
 select_minimax() {
     while true; do
         echo -e "\n--- Minimax Models ---"
         echo "1. MiniMax-M2.1"
+        echo "2. MiniMax-M2.5"
         echo "0. 返回上级"
         read -p "Select Model: " c; case $c in
             1) switch_to "MiniMaxAI/MiniMax-M2.1"; return ;;
+            2) switch_to "MiniMaxAI/MiniMax-M2.5"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
@@ -395,10 +423,12 @@ select_zai() {
         echo -e "\n--- Z.Ai (GLM) Models ---"
         echo "1. GLM-4.7"
         echo "2. GLM-4.6V"
+        echo "3. GLM-5"
         echo "0. 返回上级"
         read -p "Select Model: " c; case $c in
             1) switch_to "zai-org/GLM-4.7"; return ;;
             2) switch_to "zai-org/GLM-4.6V"; return ;;
+            3) switch_to "zai-org/GLM-5"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
@@ -413,6 +443,7 @@ select_qwen() {
         echo "5. Qwen3 VL Max"
         echo "6. Qwen3 Coder 480B"
         echo "7. Qwen3 Coder Next"
+        echo "8. Qwen3.5"
         echo "0. 返回上级"
         read -p "Select Model: " c; case $c in
             1) switch_to "qwen3-max"; return ;;
@@ -422,6 +453,7 @@ select_qwen() {
             5) switch_to "qwen3-vl-max"; return ;;
             6) switch_to "Qwen/Qwen3-Coder-480B-A35B-Instruct"; return ;;
             7) switch_to "Qwen/Qwen3-Coder-Next"; return ;;
+            8) switch_to "Qwen/Qwen3.5"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
@@ -431,24 +463,26 @@ process_switch_model_menu() {
         echo -e "\n=== 切换默认模型 (按发行商) ==="
         echo " [1] Anthropic (Claude)"
         echo " [2] DeepSeek"
-        echo " [3] Minimax"
-        echo " [4] Moonshot (Kimi)"
-        echo " [5] OpenAI"
-        echo " [6] 字节跳动 (Doubao)"
-        echo " [7] Z.Ai (GLM)"
-        echo " [8] Qwen (通义千问)"
+        echo " [3] Google (Gemini)"
+        echo " [4] Minimax"
+        echo " [5] Moonshot (Kimi)"
+        echo " [6] OpenAI"
+        echo " [7] 字节跳动 (Doubao)"
+        echo " [8] Z.Ai (GLM)"
+        echo " [9] Qwen (通义千问)"
         echo " [0] 返回主菜单"
         
-        read -p "请输入发行商编号 [0-8]: " p_choice
+        read -p "请输入发行商编号 [0-9]: " p_choice
         case $p_choice in
             1) select_anthropic ;;
             2) select_deepseek ;;
-            3) select_minimax ;;
-            4) select_moonshot ;;
-            5) select_openai ;;
-            6) select_bytedance ;;
-            7) select_zai ;;
-            8) select_qwen ;;
+            3) select_google ;;
+            4) select_minimax ;;
+            5) select_moonshot ;;
+            6) select_openai ;;
+            7) select_bytedance ;;
+            8) select_zai ;;
+            9) select_qwen ;;
             0) return ;;
             *) echo "❌ 无效的选择" ;;
         esac

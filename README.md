@@ -124,6 +124,8 @@ openclaw gateway restart
 *   `claude-opus-4-5-thinking`
 *   `claude-opus-4-6-thinking`
 *   `claude-sonnet-4-5`
+*   `claude-opus-4.6`
+*   `claude-sonnet-4.6`
 
 ### DeepSeek
 *   `deepseek-ai/DeepSeek-R1`
@@ -132,8 +134,13 @@ openclaw gateway restart
 *   `deepseek-ai/DeepSeek-V3.1-Terminus`
 *   `deepseek-ai/DeepSeek-V3.2-Exp`
 
+### Google
+*   `gemini-3.1-pro-high`
+*   `gemini-3.1-pro-low`
+
 ### Minimax
 *   `MiniMaxAI/MiniMax-M2.1`
+*   `MiniMaxAI/MiniMax-M2.5`
 
 ### Moonshot
 *   `moonshotai/Kimi-K2.5`
@@ -151,6 +158,7 @@ openclaw gateway restart
 ### Z.Ai (GLM)
 *   `zai-org/GLM-4.7`
 *   `zai-org/GLM-4.6V`
+*   `zai-org/GLM-5`
 
 ### Qwen (通义千问)
 *   `qwen3-coder-plus`
@@ -159,6 +167,7 @@ openclaw gateway restart
 *   `qwen3-vl-plus`
 *   `Qwen/Qwen3-Coder-480B-A35B-Instruct`
 *   `Qwen/Qwen3-Coder-Next`
+*   `Qwen/Qwen3.5`
 *   `qwen3-vl-max`
 
 *(具体模型列表请以脚本内实际显示为准)*
