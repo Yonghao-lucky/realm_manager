@@ -53,14 +53,6 @@ def get_realmrouter_config(api_key):
         "apiKey": api_key,
         "api": "openai-completions",
         "models": [
-            # Anthropic
-            { "id": "claude-haiku-4.5", "name": "Claude Haiku 4.5" },
-            { "id": "claude-opus-4-5-thinking", "name": "Claude Opus 4.5 Thinking" },
-            { "id": "claude-opus-4-6-thinking", "name": "Claude Opus 4.6 Thinking" },
-            { "id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5" },
-            { "id": "claude-opus-4.6", "name": "Claude Opus 4.6" },
-            { "id": "claude-sonnet-4.6", "name": "Claude Sonnet 4.6" },
-            
             # DeepSeek
             { "id": "deepseek-ai/DeepSeek-R1", "name": "DeepSeek R1" },
             { "id": "deepseek-ai/DeepSeek-R1-0528", "name": "DeepSeek R1 (0528)" },
@@ -311,27 +303,6 @@ switch_to() {
     read -p "按回车键返回主菜单..."
 }
 
-select_anthropic() {
-    while true; do
-        echo -e "\n--- Anthropic Models ---"
-        echo "1. claude-haiku-4.5"
-        echo "2. claude-opus-4-5-thinking"
-        echo "3. claude-opus-4-6-thinking"
-        echo "4. claude-sonnet-4-5"
-        echo "5. claude-opus-4.6"
-        echo "6. claude-sonnet-4.6"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "claude-haiku-4.5"; return ;;
-            2) switch_to "claude-opus-4-5-thinking"; return ;;
-            3) switch_to "claude-opus-4-6-thinking"; return ;;
-            4) switch_to "claude-sonnet-4-5"; return ;;
-            5) switch_to "claude-opus-4.6"; return ;;
-            6) switch_to "claude-sonnet-4.6"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
-
 select_deepseek() {
     while true; do
         echo -e "\n--- DeepSeek Models ---"
@@ -461,28 +432,26 @@ select_qwen() {
 process_switch_model_menu() {
     while true; do
         echo -e "\n=== 切换默认模型 (按发行商) ==="
-        echo " [1] Anthropic (Claude)"
-        echo " [2] DeepSeek"
-        echo " [3] Google (Gemini)"
-        echo " [4] Minimax"
-        echo " [5] Moonshot (Kimi)"
-        echo " [6] OpenAI"
-        echo " [7] 字节跳动 (Doubao)"
-        echo " [8] Z.Ai (GLM)"
-        echo " [9] Qwen (通义千问)"
+        echo " [1] DeepSeek"
+        echo " [2] Google (Gemini)"
+        echo " [3] Minimax"
+        echo " [4] Moonshot (Kimi)"
+        echo " [5] OpenAI"
+        echo " [6] 字节跳动 (Doubao)"
+        echo " [7] Z.Ai (GLM)"
+        echo " [8] Qwen (通义千问)"
         echo " [0] 返回主菜单"
         
-        read -p "请输入发行商编号 [0-9]: " p_choice
+        read -p "请输入发行商编号 [0-8]: " p_choice
         case $p_choice in
-            1) select_anthropic ;;
-            2) select_deepseek ;;
-            3) select_google ;;
-            4) select_minimax ;;
-            5) select_moonshot ;;
-            6) select_openai ;;
-            7) select_bytedance ;;
-            8) select_zai ;;
-            9) select_qwen ;;
+            1) select_deepseek ;;
+            2) select_google ;;
+            3) select_minimax ;;
+            4) select_moonshot ;;
+            5) select_openai ;;
+            6) select_bytedance ;;
+            7) select_zai ;;
+            8) select_qwen ;;
             0) return ;;
             *) echo "❌ 无效的选择" ;;
         esac

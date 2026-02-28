@@ -23,27 +23,9 @@
 
 ## 快速开始
 
-### 方式一：下载二进制文件（推荐）
+### 方式一：使用源码运行（Linux/macOS）
 
-无需安装额外依赖，直接下载对应系统的可执行文件即可运行。
-
-**Linux:**
-```bash
-curl -L -o realm_manager https://github.com/Yonghao-lucky/realm_manager/releases/latest/download/realm_manager_linux
-chmod +x realm_manager
-./realm_manager
-```
-
-**macOS:**
-```bash
-curl -L -o realm_manager https://github.com/Yonghao-lucky/realm_manager/releases/latest/download/realm_manager_macos
-chmod +x realm_manager
-./realm_manager
-```
-
-### 方式二：使用源码运行
-
-如果您熟悉 Shell 脚本，也可以直接运行源码。
+如果您熟悉 Shell 脚本，可以直接运行源码。
 
 ```bash
 git clone https://github.com/Yonghao-lucky/realm_manager.git
@@ -51,6 +33,29 @@ cd realm_manager
 chmod +x src/realm_manager.sh
 ./src/realm_manager.sh
 ```
+
+### 方式二：Windows PowerShell
+
+Windows 用户可以直接使用 PowerShell 脚本，无需安装额外依赖。
+
+**直接运行（推荐）：**
+```powershell
+# 下载并运行
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Yonghao-lucky/realm_manager/main/src/realm_manager.ps1" -OutFile "realm_manager.ps1"
+.\realm_manager.ps1
+```
+
+**或从源码运行：**
+```powershell
+git clone https://github.com/Yonghao-lucky/realm_manager.git
+cd realm_manager
+.\src\realm_manager.ps1
+```
+
+> **注意**: 如果遇到执行策略限制，请先运行以下命令：
+> ```powershell
+> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+> ```
 
 ## 使用指南
 
@@ -109,23 +114,23 @@ openclaw gateway restart
 
 ## 前置要求
 
+### Linux / macOS
 *   **操作系统**: Linux 或 macOS (支持 Bash 环境)
 *   **依赖工具**:
     *   `curl`: 用于网络请求和下载。
     *   `python3`: 用于解析和修改 JSON 配置文件。
     *   `OpenClaw`: 需预先安装并运行过 OpenClaw（确保 `~/.openclaw/openclaw.json` 存在）。
 
+### Windows
+*   **操作系统**: Windows 10/11 (支持 PowerShell 5.1+)
+*   **依赖工具**:
+    *   PowerShell 5.1 或更高版本（Windows 默认已安装）
+    *   `Invoke-WebRequest`: 用于网络请求（PowerShell 内置）
+    *   `OpenClaw`: 需预先安装并运行过 OpenClaw（确保 `%USERPROFILE%\.openclaw\openclaw.json` 存在）。
+
 ## 支持的模型
 
 目前脚本内置支持多种主流模型，包括但不限于：
-
-### Anthropic
-*   `claude-haiku-4.5`
-*   `claude-opus-4-5-thinking`
-*   `claude-opus-4-6-thinking`
-*   `claude-sonnet-4-5`
-*   `claude-opus-4.6`
-*   `claude-sonnet-4.6`
 
 ### DeepSeek
 *   `deepseek-ai/DeepSeek-R1`

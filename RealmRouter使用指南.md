@@ -45,14 +45,6 @@
 
 RealmRouter 精选了以下优质模型，满足您不同的业务需求（官网提供更多大模型供选择）：
 
-### Anthropic
-*   `claude-haiku-4.5`
-*   `claude-opus-4-5-thinking`
-*   `claude-opus-4-6-thinking`
-*   `claude-sonnet-4-5`
-*   `claude-opus-4.6`
-*   `claude-sonnet-4.6`
-
 ### DeepSeek (深度求索)
 *   `deepseek-ai/DeepSeek-R1`
 *   `deepseek-ai/DeepSeek-R1-0528`
