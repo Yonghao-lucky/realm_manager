@@ -15,7 +15,7 @@
 ## 功能特性
 
 *   **一键安装/重置**: 自动将 RealmRouter 的配置（包括最新的模型列表）注入到 `openclaw.json` 配置文件中。
-*   **模型切换**: 支持按发行商（Anthropic, DeepSeek, Google, OpenAI 等）分类浏览并切换默认 AI 模型。
+*   **模型切换**: 支持按发行商（Anthropic、DeepSeek、Google、OpenAI 等）分类浏览并切换默认 AI 模型，并内置最新的 `claude-haiku-4.5`、`claude-sonnet-4-5`、`gpt-5.4` 等模型。
 *   **API Key 管理**: 方便地更新和验证 RealmRouter API Key。
 *   **智能连通性测试**: 使用当前选中的模型真实调用 API，检测 Key 的有效性及网络连通状况，快速排查问题。
 *   **配置备份与还原**: 每次修改前自动备份配置文件，支持从历史备份中一键还原，安全无忧。
@@ -151,10 +151,15 @@ openclaw gateway restart
 *   `moonshotai/Kimi-K2.5`
 *   `moonshotai/Kimi-K2-Thinking`
 
+### Anthropic
+*   `claude-haiku-4.5`
+*   `claude-sonnet-4-5`
+
 ### OpenAI
 *   `gpt-5.2`
 *   `gpt-5.2-codex`
 *   `gpt-5.3-codex`
+*   `gpt-5.4`
 *   `openai/gpt-oss-120b`
 
 ### 字节跳动 (ByteDance)

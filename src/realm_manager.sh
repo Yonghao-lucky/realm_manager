@@ -60,6 +60,10 @@ def get_realmrouter_config(api_key):
             { "id": "deepseek-ai/DeepSeek-V3.1-Terminus", "name": "DeepSeek V3.1 Terminus" },
             { "id": "deepseek-ai/DeepSeek-V3.2-Exp", "name": "DeepSeek V3.2 Exp" },
             
+            # Anthropic
+            { "id": "claude-haiku-4.5", "name": "Claude Haiku 4.5" },
+            { "id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5" },
+            
             # Google
             { "id": "gemini-3.1-pro-high", "name": "Gemini 3.1 Pro High" },
             { "id": "gemini-3.1-pro-low", "name": "Gemini 3.1 Pro Low" },
@@ -76,6 +80,7 @@ def get_realmrouter_config(api_key):
             { "id": "gpt-5.2", "name": "GPT-5.2" },
             { "id": "gpt-5.2-codex", "name": "GPT-5.2 Codex" },
             { "id": "gpt-5.3-codex", "name": "GPT-5.3 Codex" },
+            { "id": "gpt-5.4", "name": "GPT-5.4" },
             { "id": "openai/gpt-oss-120b", "name": "GPT OSS 120B" },
             
             # 字节跳动 (ByteDance)
@@ -361,19 +366,34 @@ select_moonshot() {
     done
 }
 
+select_anthropic() {
+    while true; do
+        echo -e "\n--- Anthropic Models ---"
+        echo "1. Claude Haiku 4.5"
+        echo "2. Claude Sonnet 4.5"
+        echo "0. 返回上级"
+        read -p "Select Model: " c; case $c in
+            1) switch_to "claude-haiku-4.5"; return ;;
+            2) switch_to "claude-sonnet-4-5"; return ;;
+            0) return ;; *) echo "无效选择" ;; esac
+    done
+}
+
 select_openai() {
     while true; do
         echo -e "\n--- OpenAI Models ---"
         echo "1. GPT-5.2"
         echo "2. GPT-5.2 Codex"
         echo "3. GPT-5.3 Codex"
-        echo "4. GPT OSS 120B"
+        echo "4. GPT-5.4"
+        echo "5. GPT OSS 120B"
         echo "0. 返回上级"
         read -p "Select Model: " c; case $c in
             1) switch_to "gpt-5.2"; return ;;
             2) switch_to "gpt-5.2-codex"; return ;;
             3) switch_to "gpt-5.3-codex"; return ;;
-            4) switch_to "openai/gpt-oss-120b"; return ;;
+            4) switch_to "gpt-5.4"; return ;;
+            5) switch_to "openai/gpt-oss-120b"; return ;;
             0) return ;; *) echo "无效选择" ;; esac
     done
 }
@@ -433,25 +453,27 @@ process_switch_model_menu() {
     while true; do
         echo -e "\n=== 切换默认模型 (按发行商) ==="
         echo " [1] DeepSeek"
-        echo " [2] Google (Gemini)"
-        echo " [3] Minimax"
-        echo " [4] Moonshot (Kimi)"
-        echo " [5] OpenAI"
-        echo " [6] 字节跳动 (Doubao)"
-        echo " [7] Z.Ai (GLM)"
-        echo " [8] Qwen (通义千问)"
+        echo " [2] Anthropic"
+        echo " [3] Google (Gemini)"
+        echo " [4] Minimax"
+        echo " [5] Moonshot (Kimi)"
+        echo " [6] OpenAI"
+        echo " [7] 字节跳动 (Doubao)"
+        echo " [8] Z.Ai (GLM)"
+        echo " [9] Qwen (通义千问)"
         echo " [0] 返回主菜单"
         
-        read -p "请输入发行商编号 [0-8]: " p_choice
+        read -p "请输入发行商编号 [0-9]: " p_choice
         case $p_choice in
             1) select_deepseek ;;
-            2) select_google ;;
-            3) select_minimax ;;
-            4) select_moonshot ;;
-            5) select_openai ;;
-            6) select_bytedance ;;
-            7) select_zai ;;
-            8) select_qwen ;;
+            2) select_anthropic ;;
+            3) select_google ;;
+            4) select_minimax ;;
+            5) select_moonshot ;;
+            6) select_openai ;;
+            7) select_bytedance ;;
+            8) select_zai ;;
+            9) select_qwen ;;
             0) return ;;
             *) echo "❌ 无效的选择" ;;
         esac

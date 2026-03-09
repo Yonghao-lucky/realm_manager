@@ -20,6 +20,71 @@ $SCRIPT_VERSION = "2.3"
 
 # ================= Helper Functions =================
 
+function New-JsonObject {
+    return [PSCustomObject]@{}
+}
+
+function Get-JsonPropertyValue {
+    param(
+        [object]$Object,
+        [string]$Name
+    )
+
+    if ($null -eq $Object) {
+        return $null
+    }
+
+    if ($Object -is [System.Collections.IDictionary]) {
+        return $Object[$Name]
+    }
+
+    $property = $Object.PSObject.Properties[$Name]
+    if ($null -ne $property) {
+        return $property.Value
+    }
+
+    return $null
+}
+
+function Set-JsonPropertyValue {
+    param(
+        [object]$Object,
+        [string]$Name,
+        [object]$Value
+    )
+
+    if ($Object -is [System.Collections.IDictionary]) {
+        $Object[$Name] = $Value
+        return
+    }
+
+    $Object | Add-Member -MemberType NoteProperty -Name $Name -Value $Value -Force
+}
+
+function Ensure-JsonObjectProperty {
+    param(
+        [object]$Parent,
+        [string]$Name
+    )
+
+    $currentValue = Get-JsonPropertyValue -Object $Parent -Name $Name
+    if ($null -eq $currentValue) {
+        $currentValue = New-JsonObject
+        Set-JsonPropertyValue -Object $Parent -Name $Name -Value $currentValue
+    }
+
+    return $currentValue
+}
+
+function Save-ConfigFile {
+    param(
+        [string]$FilePath,
+        [object]$JsonObject
+    )
+
+    $JsonObject | ConvertTo-Json -Depth 100 | Set-Content $FilePath -Encoding UTF8
+}
+
 function Write-ColorOutput {
     param(
         [string]$Message,
@@ -75,6 +140,9 @@ function Get-RealmRouterConfig {
             @{ id = "deepseek-ai/DeepSeek-V3.1"; name = "DeepSeek V3.1" },
             @{ id = "deepseek-ai/DeepSeek-V3.1-Terminus"; name = "DeepSeek V3.1 Terminus" },
             @{ id = "deepseek-ai/DeepSeek-V3.2-Exp"; name = "DeepSeek V3.2 Exp" },
+            # Anthropic
+            @{ id = "claude-haiku-4.5"; name = "Claude Haiku 4.5" },
+            @{ id = "claude-sonnet-4-5"; name = "Claude Sonnet 4.5" },
             # Google
             @{ id = "gemini-3.1-pro-high"; name = "Gemini 3.1 Pro High" },
             @{ id = "gemini-3.1-pro-low"; name = "Gemini 3.1 Pro Low" },
@@ -88,6 +156,7 @@ function Get-RealmRouterConfig {
             @{ id = "gpt-5.2"; name = "GPT-5.2" },
             @{ id = "gpt-5.2-codex"; name = "GPT-5.2 Codex" },
             @{ id = "gpt-5.3-codex"; name = "GPT-5.3 Codex" },
+            @{ id = "gpt-5.4"; name = "GPT-5.4" },
             @{ id = "openai/gpt-oss-120b"; name = "GPT OSS 120B" },
             # ByteDance
             @{ id = "doubao-seed-code-preview-251028"; name = "Doubao Seed Code Preview" },
@@ -123,6 +192,12 @@ function Get-ModelList {
                 @{ id = "deepseek-ai/DeepSeek-V3.2-Exp"; name = "DeepSeek V3.2 Exp" }
             )
         }
+        "Anthropic" {
+            return @(
+                @{ id = "claude-haiku-4.5"; name = "Claude Haiku 4.5" },
+                @{ id = "claude-sonnet-4-5"; name = "Claude Sonnet 4.5" }
+            )
+        }
         "Google" {
             return @(
                 @{ id = "gemini-3.1-pro-high"; name = "Gemini 3.1 Pro High" },
@@ -146,6 +221,7 @@ function Get-ModelList {
                 @{ id = "gpt-5.2"; name = "GPT-5.2" },
                 @{ id = "gpt-5.2-codex"; name = "GPT-5.2 Codex" },
                 @{ id = "gpt-5.3-codex"; name = "GPT-5.3 Codex" },
+                @{ id = "gpt-5.4"; name = "GPT-5.4" },
                 @{ id = "openai/gpt-oss-120b"; name = "GPT OSS 120B" }
             )
         }
@@ -201,34 +277,24 @@ function Install-RealmRouter {
         $jsonObj = $jsonContent | ConvertFrom-Json
         
         # Ensure structure exists
-        if (-not $jsonObj.models) {
-            $jsonObj | Add-Member -MemberType NoteProperty -Name "models" -Value @{} -Force
-        }
-        if (-not $jsonObj.models.providers) {
-            $jsonObj.models | Add-Member -MemberType NoteProperty -Name "providers" -Value @{} -Force
-        }
-        if (-not $jsonObj.agents) {
-            $jsonObj | Add-Member -MemberType NoteProperty -Name "agents" -Value @{} -Force
-        }
-        if (-not $jsonObj.agents.defaults) {
-            $jsonObj.agents | Add-Member -MemberType NoteProperty -Name "defaults" -Value @{} -Force
-        }
-        if (-not $jsonObj.agents.defaults.model) {
-            $jsonObj.agents.defaults | Add-Member -MemberType NoteProperty -Name "model" -Value @{} -Force
-        }
+        $modelsObj = Ensure-JsonObjectProperty -Parent $jsonObj -Name "models"
+        $providersObj = Ensure-JsonObjectProperty -Parent $modelsObj -Name "providers"
+        $agentsObj = Ensure-JsonObjectProperty -Parent $jsonObj -Name "agents"
+        $defaultsObj = Ensure-JsonObjectProperty -Parent $agentsObj -Name "defaults"
+        $modelObj = Ensure-JsonObjectProperty -Parent $defaultsObj -Name "model"
         
         # Add realmrouter config
-        $jsonObj.models.providers | Add-Member -MemberType NoteProperty -Name "realmrouter" -Value $realmConfig -Force
+        Set-JsonPropertyValue -Object $providersObj -Name "realmrouter" -Value $realmConfig
         
         Write-ColorOutput "RealmRouter config injected." "Info"
         
         # Set default model
-        $jsonObj.agents.defaults.model | Add-Member -MemberType NoteProperty -Name "primary" -Value "realmrouter/qwen3-max" -Force
+        Set-JsonPropertyValue -Object $modelObj -Name "primary" -Value "realmrouter/qwen3-max"
         
         Write-ColorOutput "Default model switched to realmrouter/qwen3-max." "Info"
         
         # Save config
-        $jsonObj | ConvertTo-Json -Depth 10 | Set-Content $FilePath -Encoding UTF8
+        Save-ConfigFile -FilePath $FilePath -JsonObject $jsonObj
         Write-ColorOutput "Config file updated." "Success"
         return $true
     } catch {
@@ -255,7 +321,7 @@ function Update-ApiKey {
         $jsonObj.models.providers.realmrouter.apiKey = $ApiKey
         Write-ColorOutput "API Key updated." "Info"
         
-        $jsonObj | ConvertTo-Json -Depth 10 | Set-Content $FilePath -Encoding UTF8
+        Save-ConfigFile -FilePath $FilePath -JsonObject $jsonObj
         Write-ColorOutput "Config file updated." "Success"
         return $true
     } catch {
@@ -274,23 +340,17 @@ function Switch-DefaultModel {
         $jsonContent = Get-Content $FilePath -Raw
         $jsonObj = $jsonContent | ConvertFrom-Json
         
-        if (-not $jsonObj.agents) {
-            $jsonObj | Add-Member -MemberType NoteProperty -Name "agents" -Value @{} -Force
-        }
-        if (-not $jsonObj.agents.defaults) {
-            $jsonObj.agents | Add-Member -MemberType NoteProperty -Name "defaults" -Value @{} -Force
-        }
-        if (-not $jsonObj.agents.defaults.model) {
-            $jsonObj.agents.defaults | Add-Member -MemberType NoteProperty -Name "model" -Value @{} -Force
-        }
+        $agentsObj = Ensure-JsonObjectProperty -Parent $jsonObj -Name "agents"
+        $defaultsObj = Ensure-JsonObjectProperty -Parent $agentsObj -Name "defaults"
+        $modelObj = Ensure-JsonObjectProperty -Parent $defaultsObj -Name "model"
         
         $fullModelId = "realmrouter/$ModelId"
         
-        $jsonObj.agents.defaults.model | Add-Member -MemberType NoteProperty -Name "primary" -Value $fullModelId -Force
+        Set-JsonPropertyValue -Object $modelObj -Name "primary" -Value $fullModelId
         
         Write-ColorOutput "Default model switched to $fullModelId." "Info"
         
-        $jsonObj | ConvertTo-Json -Depth 10 | Set-Content $FilePath -Encoding UTF8
+        Save-ConfigFile -FilePath $FilePath -JsonObject $jsonObj
         Write-ColorOutput "Config file updated." "Success"
         return $true
     } catch {
@@ -521,7 +581,7 @@ function Show-ModelMenu {
 }
 
 function Show-SwitchModelMenu {
-    $providers = @("DeepSeek", "Google", "Minimax", "Moonshot", "OpenAI", "ByteDance", "Z.Ai", "Qwen")
+    $providers = @("DeepSeek", "Anthropic", "Google", "Minimax", "Moonshot", "OpenAI", "ByteDance", "Z.Ai", "Qwen")
     
     while ($true) {
         Write-Host ""
@@ -534,7 +594,7 @@ function Show-SwitchModelMenu {
         }
         Write-Host " [0] Back to main menu"
         
-        $choice = Read-Host "Enter provider number [0-8]"
+        $choice = Read-Host "Enter provider number [0-9]"
         
         if ($choice -match "^\d+$") {
             $idx = [int]$choice
