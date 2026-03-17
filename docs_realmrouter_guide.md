@@ -23,8 +23,8 @@
 在配置您的客户端（如 NextChat, OneAPI, LangChain 等）时，请使用以下信息：
 
 *   **Base URL (接口地址)**: 
-    *   `https://realmrouter.cn/v1`
-    *   或者完整路径：`https://realmrouter.cn/v1/chat/completions`
+    *   `https://realmrouter.cn`
+    *   如需完整接口路径：`https://realmrouter.cn/v1/chat/completions`
 *   **API Key**: 请在 [模型广场](https://realmrouter.cn) 控制台获取。
 
 ---
@@ -41,60 +41,13 @@
 
 ---
 
-##  推荐模型列表
+## 推荐模型说明
 
-RealmRouter 精选了以下优质模型，满足您不同的业务需求（官网提供更多大模型供选择）：
+RealmRouter 的可用模型会持续更新，推荐模型列表也会随服务端动态变化。
 
-### DeepSeek (深度求索)
-*   `deepseek-ai/DeepSeek-R1`
-*   `deepseek-ai/DeepSeek-R1-0528`
-*   `deepseek-ai/DeepSeek-V3.1`
-*   `deepseek-ai/DeepSeek-V3.1-Terminus`
-*   `deepseek-ai/DeepSeek-V3.2-Exp`
-
-### Anthropic
-*   `claude-haiku-4.5`
-*   `claude-sonnet-4-5`
-*   `claude-opus-4.1`
-*   `claude-sonnet-4`
-*   `claude-3.7-sonnet`
-
-### Google
-*   `gemini-3.1-pro-high`
-*   `gemini-3.1-pro-low`
-
-### Minimax
-*   `MiniMaxAI/MiniMax-M2.1`
-*   `MiniMaxAI/MiniMax-M2.5`
-
-### Moonshot (月之暗面)
-*   `moonshotai/Kimi-K2.5`
-*   `moonshotai/Kimi-K2-Thinking`
-
-### OpenAI
-*   `gpt-5.2`
-*   `gpt-5.2-codex`
-*   `gpt-5.3-codex`
-*   `gpt-5.4`
-*   `openai/gpt-oss-120b`
-
-### 字节跳动 (ByteDance)
-*   `doubao-seed-code-preview-251028`
-
-### Z.Ai (智谱 GLM)
-*   `zai-org/GLM-4.7`
-*   `zai-org/GLM-4.6V`
-*   `zai-org/GLM-5`
-
-### Qwen (通义千问)
-*   `qwen3-coder-plus`
-*   `qwen3-max` **(默认)**
-*   `qwen3-max-preview`
-*   `qwen3-vl-plus`
-*   `Qwen/Qwen3-Coder-480B-A35B-Instruct`
-*   `Qwen/Qwen3-Coder-Next`
-*   `Qwen/Qwen3.5`
-*   `qwen3-vl-max`
+*   如果您使用本仓库里的 `realm_manager` 工具，模型菜单会实时请求 RealmRouter 的 `/v1/models`
+*   实际可用模型、名称和分组请以控制台或接口实时返回结果为准
+*   如果某个模型近期下线、无可用渠道或临时维护，脚本会在测试连通时直接提示
 
 ---
 
