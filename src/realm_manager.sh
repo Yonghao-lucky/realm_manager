@@ -22,19 +22,24 @@ read -r -d '' PYTHON_SCRIPT << 'EOF' || true
 import sys
 import json
 import os
+import urllib.request
+import urllib.error
+
+API_BASE_URL = "https://realmrouter.cn/v1"
+DEFAULT_MODEL_ID = "gpt-5.4"
 
 def load_json(path):
     try:
         with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except json.JSONDecodeError:
-        print("Error: JSON 解析失败，配置文件可能已损坏。")
+        print("Error: JSON 解析失败，配置文件可能已损坏。", file=sys.stderr)
         sys.exit(1)
     except FileNotFoundError:
-        print(f"Error: 找不到文件: {path}")
+        print(f"Error: 找不到文件: {path}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"Error: 读取配置文件失败: {e}")
+        print(f"Error: 读取配置文件失败: {e}", file=sys.stderr)
         sys.exit(1)
 
 def save_json(path, data):
@@ -43,64 +48,64 @@ def save_json(path, data):
             json.dump(data, f, indent=2, ensure_ascii=False)
         print("Success: 配置文件已更新。")
     except Exception as e:
-        print(f"Error: 保存配置文件失败: {e}")
+        print(f"Error: 保存配置文件失败: {e}", file=sys.stderr)
         sys.exit(1)
 
-def get_realmrouter_config(api_key):
-    # 完整的模型列表
+def classify_provider(model_id):
+    model_id_lower = model_id.lower()
+    if model_id.startswith("claude"):
+        return "Anthropic"
+    if model_id.startswith("gemini"):
+        return "Google"
+    if model_id.startswith("minimaxai/"):
+        return "Minimax"
+    if model_id.startswith("moonshotai/") or model_id.startswith("kimi"):
+        return "Moonshot"
+    if model_id.startswith("doubao"):
+        return "ByteDance"
+    if model_id.startswith("zai-org/") or model_id.startswith("glm"):
+        return "Z.Ai"
+    if model_id.startswith("qwen") or model_id.startswith("qwen/"):
+        return "Qwen"
+    if model_id.startswith("deepseek"):
+        return "DeepSeek"
+    if model_id.startswith("gpt") or model_id.startswith("openai/"):
+        return "OpenAI"
+    if "qwen" in model_id_lower:
+        return "Qwen"
+    if "deepseek" in model_id_lower:
+        return "DeepSeek"
+    return "Other"
+
+def fetch_remote_models(api_key):
+    request = urllib.request.Request(
+        f"{API_BASE_URL}/models",
+        headers={"Authorization": f"Bearer {api_key}"}
+    )
+
+    with urllib.request.urlopen(request, timeout=30) as response:
+        payload = json.load(response)
+
+    remote_models = []
+    for item in payload.get("data", []):
+        model_id = item.get("id")
+        if not model_id:
+            continue
+        remote_models.append({
+            "id": model_id,
+            "name": item.get("name") or model_id,
+            "provider": classify_provider(model_id)
+        })
+
+    remote_models.sort(key=lambda model: (model["provider"], model["name"].lower()))
+    return remote_models
+
+def get_realmrouter_config(api_key, models):
     return {
-        "baseUrl": "https://realmrouter.cn/v1",
+        "baseUrl": API_BASE_URL,
         "apiKey": api_key,
         "api": "openai-completions",
-        "models": [
-            # DeepSeek
-            { "id": "deepseek-ai/DeepSeek-R1", "name": "DeepSeek R1" },
-            { "id": "deepseek-ai/DeepSeek-R1-0528", "name": "DeepSeek R1 (0528)" },
-            { "id": "deepseek-ai/DeepSeek-V3.1", "name": "DeepSeek V3.1" },
-            { "id": "deepseek-ai/DeepSeek-V3.1-Terminus", "name": "DeepSeek V3.1 Terminus" },
-            { "id": "deepseek-ai/DeepSeek-V3.2-Exp", "name": "DeepSeek V3.2 Exp" },
-            
-            # Anthropic
-            { "id": "claude-haiku-4.5", "name": "Claude Haiku 4.5" },
-            { "id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5" },
-            
-            # Google
-            { "id": "gemini-3.1-pro-high", "name": "Gemini 3.1 Pro High" },
-            { "id": "gemini-3.1-pro-low", "name": "Gemini 3.1 Pro Low" },
-            
-            # Minimax
-            { "id": "MiniMaxAI/MiniMax-M2.1", "name": "MiniMax M2.1" },
-            { "id": "MiniMaxAI/MiniMax-M2.5", "name": "MiniMax M2.5" },
-            
-            # Moonshot
-            { "id": "moonshotai/Kimi-K2.5", "name": "Kimi K2.5" },
-            { "id": "moonshotai/Kimi-K2-Thinking", "name": "Kimi K2 Thinking" },
-            
-            # OpenAI
-            { "id": "gpt-5.2", "name": "GPT-5.2" },
-            { "id": "gpt-5.2-codex", "name": "GPT-5.2 Codex" },
-            { "id": "gpt-5.3-codex", "name": "GPT-5.3 Codex" },
-            { "id": "gpt-5.4", "name": "GPT-5.4" },
-            { "id": "openai/gpt-oss-120b", "name": "GPT OSS 120B" },
-            
-            # 字节跳动 (ByteDance)
-            { "id": "doubao-seed-code-preview-251028", "name": "Doubao Seed Code Preview" },
-            
-            # Z.Ai
-            { "id": "zai-org/GLM-4.7", "name": "GLM 4.7" },
-            { "id": "zai-org/GLM-4.6V", "name": "GLM 4.6V" },
-            { "id": "zai-org/GLM-5", "name": "GLM 5" },
-            
-            # Qwen
-            { "id": "qwen3-coder-plus", "name": "Qwen3 Coder Plus" },
-            { "id": "qwen3-max", "name": "Qwen3 Max" },
-            { "id": "qwen3-max-preview", "name": "Qwen3 Max Preview" },
-            { "id": "qwen3-vl-plus", "name": "Qwen3 VL Plus" },
-            { "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct", "name": "Qwen3 Coder 480B" },
-            { "id": "Qwen/Qwen3-Coder-Next", "name": "Qwen3 Coder Next" },
-            { "id": "Qwen/Qwen3.5", "name": "Qwen3.5" },
-            { "id": "qwen3-vl-max", "name": "Qwen3 VL Max" }
-        ]
+        "models": [{"id": model["id"], "name": model["name"]} for model in models]
     }
 
 def action_install(file_path, api_key):
@@ -112,13 +117,13 @@ def action_install(file_path, api_key):
     if 'defaults' not in data['agents']: data['agents']['defaults'] = {}
     if 'model' not in data['agents']['defaults']: data['agents']['defaults']['model'] = {}
 
-    realm_config = get_realmrouter_config(api_key)
+    remote_models = fetch_remote_models(api_key)
+    realm_config = get_realmrouter_config(api_key, remote_models)
     data['models']['providers']['realmrouter'] = realm_config
     print("Info: RealmRouter 配置已注入。")
 
-    # 默认模型: realmrouter/qwen3-max
-    data['agents']['defaults']['model']['primary'] = "realmrouter/qwen3-max"
-    print("Info: 默认模型已切换为 realmrouter/qwen3-max。")
+    data['agents']['defaults']['model']['primary'] = f"realmrouter/{DEFAULT_MODEL_ID}"
+    print(f"Info: 默认模型已切换为 realmrouter/{DEFAULT_MODEL_ID}。")
 
     save_json(file_path, data)
 
@@ -128,14 +133,18 @@ def action_update_key(file_path, api_key):
         if 'models' not in data or \
            'providers' not in data['models'] or \
            'realmrouter' not in data['models']['providers']:
-            print("Error: 未找到 RealmRouter 配置，请先执行[安装/重置]。")
+            print("Error: 未找到 RealmRouter 配置，请先执行[安装/重置]。", file=sys.stderr)
             sys.exit(1)
             
         data['models']['providers']['realmrouter']['apiKey'] = api_key
+        data['models']['providers']['realmrouter']['models'] = [
+            {"id": model["id"], "name": model["name"]}
+            for model in fetch_remote_models(api_key)
+        ]
         print("Info: API Key 已更新。")
         save_json(file_path, data)
     except KeyError:
-        print("Error: 配置文件结构异常。")
+        print("Error: 配置文件结构异常。", file=sys.stderr)
         sys.exit(1)
 
 def action_switch_model(file_path, model_id):
@@ -151,7 +160,7 @@ def action_switch_model(file_path, model_id):
         print(f"Info: 默认模型已切换为 {full_model_id}。")
         save_json(file_path, data)
     except Exception as e:
-        print(f"Error: 切换模型失败: {e}")
+        print(f"Error: 切换模型失败: {e}", file=sys.stderr)
         sys.exit(1)
 
 def action_get_key(file_path):
@@ -180,6 +189,34 @@ def action_get_model(file_path):
     except Exception:
         sys.exit(1)
 
+def action_list_providers(file_path):
+    data = load_json(file_path)
+    api_key = data.get('models', {}).get('providers', {}).get('realmrouter', {}).get('apiKey')
+    if not api_key:
+        sys.exit(1)
+
+    providers = []
+    seen = set()
+    for model in fetch_remote_models(api_key):
+        provider = model['provider']
+        if provider in seen:
+            continue
+        providers.append(provider)
+        seen.add(provider)
+
+    for provider in providers:
+        print(provider)
+
+def action_list_models_by_provider(file_path, provider):
+    data = load_json(file_path)
+    api_key = data.get('models', {}).get('providers', {}).get('realmrouter', {}).get('apiKey')
+    if not api_key:
+        sys.exit(1)
+
+    for model in fetch_remote_models(api_key):
+        if model['provider'] == provider:
+            print(f"{model['id']}\t{model['name']}")
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         sys.exit(1)
@@ -197,6 +234,10 @@ if __name__ == "__main__":
         action_get_key(file_path)
     elif action == "get_model":
         action_get_model(file_path)
+    elif action == "list_providers":
+        action_list_providers(file_path)
+    elif action == "list_models_by_provider":
+        action_list_models_by_provider(file_path, sys.argv[3])
 EOF
 
 # ================= Helper Functions =================
@@ -233,45 +274,69 @@ backup_config() {
 
 verify_api_key() {
     local key="$1"
-    local model_id="${2:-qwen3-max}" # 如果未指定，默认使用 qwen3-max
-    local silent="${3:-false}"  # 第三个参数：静默模式（不询问是否强制继续）
+    local silent="${2:-false}"
     echo -n "⏳ 正在验证 API Key 有效性... "
-    
-    # 构造测试请求数据
-    # 注意：这里必须使用原始模型 ID，不能带 realmrouter/ 前缀
-    local payload="{\"model\": \"$model_id\", \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}], \"max_tokens\": 1}"
-    
-    # 使用 /v1/chat/completions 接口验证
+
     local response
     local http_code
-    
-    # 捕获 HTTP 状态码和响应体
+
+    response=$(curl -s -w "\n%{http_code}" -X GET "$API_BASE_URL/models" \
+        -H "Authorization: Bearer $key" \
+        -H "Content-Type: application/json" 2>/dev/null)
+
+    http_code=$(python3 -c 'import sys; data=sys.stdin.read().splitlines(); print(data[-1] if data else "")' <<< "$response")
+
+    if [ "$http_code" = "200" ]; then
+        echo "✅ 成功。"
+        return 0
+    fi
+
+    echo "⚠️ 失败 (HTTP ${http_code:-无响应})。"
+    echo "可能原因: Key 无效、权限不足或网络问题。"
+    if [ "$silent" = "true" ]; then
+        return 1
+    fi
+
+    read -p "是否强制继续？(y/N): " force
+    if [[ "$force" =~ ^[Yy]$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+test_model_connectivity() {
+    local key="$1"
+    local model_id="${2:-gpt-5.4}"
+    local silent="${3:-false}"
+    echo -n "⏳ 正在测试模型连通性... "
+
+    local payload="{\"model\": \"$model_id\", \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}], \"max_tokens\": 1}"
+    local response
+    local http_code
+
     response=$(curl -s -w "\n%{http_code}" -X POST "$API_BASE_URL/chat/completions" \
         -H "Authorization: Bearer $key" \
         -H "Content-Type: application/json" \
         -d "$payload" 2>/dev/null)
-        
-    http_code=$(echo "$response" | tail -n1)
-    # body=$(echo "$response" | sed '$d') # 如果需要调试可以打印 body
-    
-    # 安全的字符串比较，避免 http_code 为空或非数字时报错
+
+    http_code=$(python3 -c 'import sys; data=sys.stdin.read().splitlines(); print(data[-1] if data else "")' <<< "$response")
+
     if [ "$http_code" = "200" ]; then
         echo "✅ 成功。"
         return 0
-    else
-        echo "⚠️ 失败 (HTTP ${http_code:-无响应})。"
-        echo "可能原因: Key 无效、余额不足、模型名称错误或网络问题。"
-        # 静默模式下直接返回失败，不询问用户
-        if [ "$silent" = "true" ]; then
-            return 1
-        fi
-        read -p "是否强制继续？(y/N): " force
-        if [[ "$force" =~ ^[Yy]$ ]]; then
-            return 0
-        else
-            return 1
-        fi
     fi
+
+    echo "⚠️ 失败 (HTTP ${http_code:-无响应})。"
+    echo "可能原因: 当前模型不可用、余额不足、模型名称错误或网络问题。"
+    if [ "$silent" = "true" ]; then
+        return 1
+    fi
+
+    read -p "是否强制继续？(y/N): " force
+    if [[ "$force" =~ ^[Yy]$ ]]; then
+        return 0
+    fi
+    return 1
 }
 
 restore_backup() {
@@ -308,175 +373,83 @@ switch_to() {
     read -p "按回车键返回主菜单..."
 }
 
-select_deepseek() {
-    while true; do
-        echo -e "\n--- DeepSeek Models ---"
-        echo "1. DeepSeek-R1"
-        echo "2. DeepSeek-R1 (0528)"
-        echo "3. DeepSeek-V3.1"
-        echo "4. DeepSeek-V3.1-Terminus"
-        echo "5. DeepSeek-V3.2-Exp"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "deepseek-ai/DeepSeek-R1"; return ;;
-            2) switch_to "deepseek-ai/DeepSeek-R1-0528"; return ;;
-            3) switch_to "deepseek-ai/DeepSeek-V3.1"; return ;;
-            4) switch_to "deepseek-ai/DeepSeek-V3.1-Terminus"; return ;;
-            5) switch_to "deepseek-ai/DeepSeek-V3.2-Exp"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
+show_provider_model_menu() {
+    local provider="$1"
+    local model_lines
 
-select_google() {
-    while true; do
-        echo -e "\n--- Google Models ---"
-        echo "1. Gemini 3.1 Pro High"
-        echo "2. Gemini 3.1 Pro Low"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "gemini-3.1-pro-high"; return ;;
-            2) switch_to "gemini-3.1-pro-low"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
+    model_lines=$(python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "list_models_by_provider" "$provider" 2>/dev/null)
+    if [ -z "$model_lines" ]; then
+        echo "❌ 未获取到 $provider 的可用模型。"
+        read -p "按回车键返回..."
+        return
+    fi
 
-select_minimax() {
-    while true; do
-        echo -e "\n--- Minimax Models ---"
-        echo "1. MiniMax-M2.1"
-        echo "2. MiniMax-M2.5"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "MiniMaxAI/MiniMax-M2.1"; return ;;
-            2) switch_to "MiniMaxAI/MiniMax-M2.5"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
+    local models=()
+    while IFS= read -r line; do
+        [ -n "$line" ] && models+=("$line")
+    done <<< "$model_lines"
 
-select_moonshot() {
     while true; do
-        echo -e "\n--- Moonshot Models ---"
-        echo "1. Kimi-K2.5"
-        echo "2. Kimi-K2-Thinking"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "moonshotai/Kimi-K2.5"; return ;;
-            2) switch_to "moonshotai/Kimi-K2-Thinking"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
+        echo -e "\n--- $provider Models ---"
+        local i=1
+        for model_line in "${models[@]}"; do
+            local model_name=${model_line#*$'\t'}
+            echo "[$i] $model_name"
+            i=$((i+1))
+        done
+        echo "[0] 返回上级"
 
-select_anthropic() {
-    while true; do
-        echo -e "\n--- Anthropic Models ---"
-        echo "1. Claude Haiku 4.5"
-        echo "2. Claude Sonnet 4.5"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "claude-haiku-4.5"; return ;;
-            2) switch_to "claude-sonnet-4-5"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
-
-select_openai() {
-    while true; do
-        echo -e "\n--- OpenAI Models ---"
-        echo "1. GPT-5.2"
-        echo "2. GPT-5.2 Codex"
-        echo "3. GPT-5.3 Codex"
-        echo "4. GPT-5.4"
-        echo "5. GPT OSS 120B"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "gpt-5.2"; return ;;
-            2) switch_to "gpt-5.2-codex"; return ;;
-            3) switch_to "gpt-5.3-codex"; return ;;
-            4) switch_to "gpt-5.4"; return ;;
-            5) switch_to "openai/gpt-oss-120b"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
-
-select_bytedance() {
-    while true; do
-        echo -e "\n--- Bytedance Models ---"
-        echo "1. Doubao Seed Code Preview"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "doubao-seed-code-preview-251028"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
-
-select_zai() {
-    while true; do
-        echo -e "\n--- Z.Ai (GLM) Models ---"
-        echo "1. GLM-4.7"
-        echo "2. GLM-4.6V"
-        echo "3. GLM-5"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "zai-org/GLM-4.7"; return ;;
-            2) switch_to "zai-org/GLM-4.6V"; return ;;
-            3) switch_to "zai-org/GLM-5"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
-    done
-}
-
-select_qwen() {
-    while true; do
-        echo -e "\n--- Qwen Models ---"
-        echo "1. Qwen3 Max"
-        echo "2. Qwen3 Max Preview"
-        echo "3. Qwen3 Coder Plus"
-        echo "4. Qwen3 VL Plus"
-        echo "5. Qwen3 VL Max"
-        echo "6. Qwen3 Coder 480B"
-        echo "7. Qwen3 Coder Next"
-        echo "8. Qwen3.5"
-        echo "0. 返回上级"
-        read -p "Select Model: " c; case $c in
-            1) switch_to "qwen3-max"; return ;;
-            2) switch_to "qwen3-max-preview"; return ;;
-            3) switch_to "qwen3-coder-plus"; return ;;
-            4) switch_to "qwen3-vl-plus"; return ;;
-            5) switch_to "qwen3-vl-max"; return ;;
-            6) switch_to "Qwen/Qwen3-Coder-480B-A35B-Instruct"; return ;;
-            7) switch_to "Qwen/Qwen3-Coder-Next"; return ;;
-            8) switch_to "Qwen/Qwen3.5"; return ;;
-            0) return ;; *) echo "无效选择" ;; esac
+        read -p "Select Model: " c
+        if [[ "$c" =~ ^[0-9]+$ ]]; then
+            if [ "$c" -eq 0 ]; then
+                return
+            fi
+            if [ "$c" -ge 1 ] && [ "$c" -le "${#models[@]}" ]; then
+                local selected=${models[$((c-1))]}
+                switch_to "${selected%%$'\t'*}"
+                return
+            fi
+        fi
+        echo "无效选择"
     done
 }
 
 process_switch_model_menu() {
+    local provider_lines
+    provider_lines=$(python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "list_providers" 2>/dev/null)
+    if [ -z "$provider_lines" ]; then
+        echo -e "\n❌ 无法实时获取模型列表。请先确认已配置 API Key 且网络正常。"
+        read -p "按回车键继续..."
+        return
+    fi
+
+    local providers=()
+    while IFS= read -r line; do
+        [ -n "$line" ] && providers+=("$line")
+    done <<< "$provider_lines"
+
     while true; do
-        echo -e "\n=== 切换默认模型 (按发行商) ==="
-        echo " [1] DeepSeek"
-        echo " [2] Anthropic"
-        echo " [3] Google (Gemini)"
-        echo " [4] Minimax"
-        echo " [5] Moonshot (Kimi)"
-        echo " [6] OpenAI"
-        echo " [7] 字节跳动 (Doubao)"
-        echo " [8] Z.Ai (GLM)"
-        echo " [9] Qwen (通义千问)"
+        echo -e "\n=== 切换默认模型 (实时获取) ==="
+        local i=1
+        for provider in "${providers[@]}"; do
+            echo " [$i] $provider"
+            i=$((i+1))
+        done
         echo " [0] 返回主菜单"
         
-        read -p "请输入发行商编号 [0-9]: " p_choice
-        case $p_choice in
-            1) select_deepseek ;;
-            2) select_anthropic ;;
-            3) select_google ;;
-            4) select_minimax ;;
-            5) select_moonshot ;;
-            6) select_openai ;;
-            7) select_bytedance ;;
-            8) select_zai ;;
-            9) select_qwen ;;
-            0) return ;;
-            *) echo "❌ 无效的选择" ;;
-        esac
+        read -p "请输入发行商编号: " p_choice
+        if [[ "$p_choice" =~ ^[0-9]+$ ]]; then
+            if [ "$p_choice" -eq 0 ]; then
+                return
+            fi
+            if [ "$p_choice" -ge 1 ] && [ "$p_choice" -le "${#providers[@]}" ]; then
+                show_provider_model_menu "${providers[$((p_choice-1))]}"
+            else
+                echo "❌ 无效的选择"
+            fi
+        else
+            echo "❌ 无效的选择"
+        fi
     done
 }
 
@@ -528,9 +501,9 @@ process_test_connectivity() {
     # 去除 realmrouter/ 前缀
     local real_model_id=${current_model#realmrouter/}
     
-    # 如果没获取到，默认回退到 qwen3-max
+    # 如果没获取到，默认回退到 gpt-5.4
     if [ -z "$real_model_id" ]; then
-        real_model_id="qwen3-max"
+        real_model_id="gpt-5.4"
     fi
 
     if [ -z "$current_key" ]; then
@@ -545,7 +518,7 @@ process_test_connectivity() {
     echo "测试模型: $real_model_id"
     echo "----------------------------------------"
     
-    verify_api_key "$current_key" "$real_model_id" "true"
+    test_model_connectivity "$current_key" "$real_model_id" "true"
     local result=$?
     
     echo "----------------------------------------"

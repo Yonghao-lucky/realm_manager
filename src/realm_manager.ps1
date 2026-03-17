@@ -17,6 +17,7 @@ $README_URL = "https://raw.githubusercontent.com/Yonghao-lucky/realm_manager/mai
 
 # ================= Model Definitions =================
 $SCRIPT_VERSION = "2.3"
+$DEFAULT_MODEL_ID = "gpt-5.4"
 
 # ================= Helper Functions =================
 
@@ -126,132 +127,58 @@ function Backup-Config {
     }
 }
 
-function Get-RealmRouterConfig {
-    param([string]$ApiKey)
-    
-    $config = @{
-        baseUrl = "https://realmrouter.cn/v1"
-        apiKey = $ApiKey
-        api = "openai-completions"
-        models = @(
-            # DeepSeek
-            @{ id = "deepseek-ai/DeepSeek-R1"; name = "DeepSeek R1" },
-            @{ id = "deepseek-ai/DeepSeek-R1-0528"; name = "DeepSeek R1 (0528)" },
-            @{ id = "deepseek-ai/DeepSeek-V3.1"; name = "DeepSeek V3.1" },
-            @{ id = "deepseek-ai/DeepSeek-V3.1-Terminus"; name = "DeepSeek V3.1 Terminus" },
-            @{ id = "deepseek-ai/DeepSeek-V3.2-Exp"; name = "DeepSeek V3.2 Exp" },
-            # Anthropic
-            @{ id = "claude-haiku-4.5"; name = "Claude Haiku 4.5" },
-            @{ id = "claude-sonnet-4-5"; name = "Claude Sonnet 4.5" },
-            # Google
-            @{ id = "gemini-3.1-pro-high"; name = "Gemini 3.1 Pro High" },
-            @{ id = "gemini-3.1-pro-low"; name = "Gemini 3.1 Pro Low" },
-            # Minimax
-            @{ id = "MiniMaxAI/MiniMax-M2.1"; name = "MiniMax M2.1" },
-            @{ id = "MiniMaxAI/MiniMax-M2.5"; name = "MiniMax M2.5" },
-            # Moonshot
-            @{ id = "moonshotai/Kimi-K2.5"; name = "Kimi K2.5" },
-            @{ id = "moonshotai/Kimi-K2-Thinking"; name = "Kimi K2 Thinking" },
-            # OpenAI
-            @{ id = "gpt-5.2"; name = "GPT-5.2" },
-            @{ id = "gpt-5.2-codex"; name = "GPT-5.2 Codex" },
-            @{ id = "gpt-5.3-codex"; name = "GPT-5.3 Codex" },
-            @{ id = "gpt-5.4"; name = "GPT-5.4" },
-            @{ id = "openai/gpt-oss-120b"; name = "GPT OSS 120B" },
-            # ByteDance
-            @{ id = "doubao-seed-code-preview-251028"; name = "Doubao Seed Code Preview" },
-            # Z.Ai
-            @{ id = "zai-org/GLM-4.7"; name = "GLM 4.7" },
-            @{ id = "zai-org/GLM-4.6V"; name = "GLM 4.6V" },
-            @{ id = "zai-org/GLM-5"; name = "GLM 5" },
-            # Qwen
-            @{ id = "qwen3-coder-plus"; name = "Qwen3 Coder Plus" },
-            @{ id = "qwen3-max"; name = "Qwen3 Max" },
-            @{ id = "qwen3-max-preview"; name = "Qwen3 Max Preview" },
-            @{ id = "qwen3-vl-plus"; name = "Qwen3 VL Plus" },
-            @{ id = "qwen3-vl-max"; name = "Qwen3 VL Max" },
-            @{ id = "Qwen/Qwen3-Coder-480B-A35B-Instruct"; name = "Qwen3 Coder 480B" },
-            @{ id = "Qwen/Qwen3-Coder-Next"; name = "Qwen3 Coder Next" },
-            @{ id = "Qwen/Qwen3.5"; name = "Qwen3.5" }
-        )
-    }
-    
-    return $config
+function Get-ProviderName {
+    param([string]$ModelId)
+
+    $modelIdLower = $ModelId.ToLowerInvariant()
+
+    if ($ModelId.StartsWith("claude")) { return "Anthropic" }
+    if ($ModelId.StartsWith("gemini")) { return "Google" }
+    if ($modelIdLower.StartsWith("minimaxai/")) { return "Minimax" }
+    if ($modelIdLower.StartsWith("moonshotai/") -or $modelIdLower.StartsWith("kimi")) { return "Moonshot" }
+    if ($modelIdLower.StartsWith("doubao")) { return "ByteDance" }
+    if ($modelIdLower.StartsWith("zai-org/") -or $modelIdLower.StartsWith("glm")) { return "Z.Ai" }
+    if ($modelIdLower.StartsWith("qwen") -or $modelIdLower.Contains("qwen")) { return "Qwen" }
+    if ($modelIdLower.StartsWith("deepseek") -or $modelIdLower.Contains("deepseek")) { return "DeepSeek" }
+    if ($modelIdLower.StartsWith("gpt") -or $modelIdLower.StartsWith("openai/")) { return "OpenAI" }
+
+    return "Other"
 }
 
-function Get-ModelList {
-    param([string]$Provider)
-    
-    switch ($Provider) {
-        "DeepSeek" {
-            return @(
-                @{ id = "deepseek-ai/DeepSeek-R1"; name = "DeepSeek R1" },
-                @{ id = "deepseek-ai/DeepSeek-R1-0528"; name = "DeepSeek R1 (0528)" },
-                @{ id = "deepseek-ai/DeepSeek-V3.1"; name = "DeepSeek V3.1" },
-                @{ id = "deepseek-ai/DeepSeek-V3.1-Terminus"; name = "DeepSeek V3.1 Terminus" },
-                @{ id = "deepseek-ai/DeepSeek-V3.2-Exp"; name = "DeepSeek V3.2 Exp" }
-            )
+function Get-RemoteModels {
+    param([string]$ApiKey)
+
+    $headers = @{ "Authorization" = "Bearer $ApiKey" }
+    $response = Invoke-RestMethod -Uri "$API_BASE_URL/models" -Method Get -Headers $headers -ErrorAction Stop
+    $models = @()
+
+    foreach ($item in $response.data) {
+        if ([string]::IsNullOrWhiteSpace($item.id)) {
+            continue
         }
-        "Anthropic" {
-            return @(
-                @{ id = "claude-haiku-4.5"; name = "Claude Haiku 4.5" },
-                @{ id = "claude-sonnet-4-5"; name = "Claude Sonnet 4.5" }
-            )
+
+        $displayName = if ([string]::IsNullOrWhiteSpace($item.name)) { $item.id } else { $item.name }
+        $models += [PSCustomObject]@{
+            id = $item.id
+            name = $displayName
+            provider = Get-ProviderName -ModelId $item.id
         }
-        "Google" {
-            return @(
-                @{ id = "gemini-3.1-pro-high"; name = "Gemini 3.1 Pro High" },
-                @{ id = "gemini-3.1-pro-low"; name = "Gemini 3.1 Pro Low" }
-            )
-        }
-        "Minimax" {
-            return @(
-                @{ id = "MiniMaxAI/MiniMax-M2.1"; name = "MiniMax M2.1" },
-                @{ id = "MiniMaxAI/MiniMax-M2.5"; name = "MiniMax M2.5" }
-            )
-        }
-        "Moonshot" {
-            return @(
-                @{ id = "moonshotai/Kimi-K2.5"; name = "Kimi K2.5" },
-                @{ id = "moonshotai/Kimi-K2-Thinking"; name = "Kimi K2 Thinking" }
-            )
-        }
-        "OpenAI" {
-            return @(
-                @{ id = "gpt-5.2"; name = "GPT-5.2" },
-                @{ id = "gpt-5.2-codex"; name = "GPT-5.2 Codex" },
-                @{ id = "gpt-5.3-codex"; name = "GPT-5.3 Codex" },
-                @{ id = "gpt-5.4"; name = "GPT-5.4" },
-                @{ id = "openai/gpt-oss-120b"; name = "GPT OSS 120B" }
-            )
-        }
-        "ByteDance" {
-            return @(
-                @{ id = "doubao-seed-code-preview-251028"; name = "Doubao Seed Code Preview" }
-            )
-        }
-        "Z.Ai" {
-            return @(
-                @{ id = "zai-org/GLM-4.7"; name = "GLM 4.7" },
-                @{ id = "zai-org/GLM-4.6V"; name = "GLM 4.6V" },
-                @{ id = "zai-org/GLM-5"; name = "GLM 5" }
-            )
-        }
-        "Qwen" {
-            return @(
-                @{ id = "qwen3-coder-plus"; name = "Qwen3 Coder Plus" },
-                @{ id = "qwen3-max"; name = "Qwen3 Max" },
-                @{ id = "qwen3-max-preview"; name = "Qwen3 Max Preview" },
-                @{ id = "qwen3-vl-plus"; name = "Qwen3 VL Plus" },
-                @{ id = "qwen3-vl-max"; name = "Qwen3 VL Max" },
-                @{ id = "Qwen/Qwen3-Coder-480B-A35B-Instruct"; name = "Qwen3 Coder 480B" },
-                @{ id = "Qwen/Qwen3-Coder-Next"; name = "Qwen3 Coder Next" },
-                @{ id = "Qwen/Qwen3.5"; name = "Qwen3.5" }
-            )
-        }
-        default {
-            return @()
-        }
+    }
+
+    return $models | Sort-Object provider, name
+}
+
+function Get-RealmRouterConfig {
+    param(
+        [string]$ApiKey,
+        [array]$Models
+    )
+
+    return @{
+        baseUrl = $API_BASE_URL
+        apiKey = $ApiKey
+        api = "openai-completions"
+        models = @($Models | ForEach-Object { @{ id = $_.id; name = $_.name } })
     }
 }
 
@@ -270,7 +197,8 @@ function Install-RealmRouter {
     }
     
     # Add RealmRouter config
-    $realmConfig = Get-RealmRouterConfig -ApiKey $ApiKey
+    $remoteModels = Get-RemoteModels -ApiKey $ApiKey
+    $realmConfig = Get-RealmRouterConfig -ApiKey $ApiKey -Models $remoteModels
     
     try {
         # Read original JSON
@@ -289,9 +217,9 @@ function Install-RealmRouter {
         Write-ColorOutput "RealmRouter config injected." "Info"
         
         # Set default model
-        Set-JsonPropertyValue -Object $modelObj -Name "primary" -Value "realmrouter/qwen3-max"
+        Set-JsonPropertyValue -Object $modelObj -Name "primary" -Value "realmrouter/$DEFAULT_MODEL_ID"
         
-        Write-ColorOutput "Default model switched to realmrouter/qwen3-max." "Info"
+        Write-ColorOutput "Default model switched to realmrouter/$DEFAULT_MODEL_ID." "Info"
         
         # Save config
         Save-ConfigFile -FilePath $FilePath -JsonObject $jsonObj
@@ -319,6 +247,7 @@ function Update-ApiKey {
         }
         
         $jsonObj.models.providers.realmrouter.apiKey = $ApiKey
+        $jsonObj.models.providers.realmrouter.models = @(Get-RemoteModels -ApiKey $ApiKey | ForEach-Object { @{ id = $_.id; name = $_.name } })
         Write-ColorOutput "API Key updated." "Info"
         
         Save-ConfigFile -FilePath $FilePath -JsonObject $jsonObj
@@ -386,19 +315,10 @@ function Get-CurrentModel {
 function Test-ApiKey {
     param(
         [string]$ApiKey,
-        [string]$ModelId = "qwen3-max",
         [switch]$Silent
     )
     
     Write-Host "[*] Validating API Key... " -NoNewline
-    
-    $payload = @{
-        model = $ModelId
-        messages = @(
-            @{ role = "user"; content = "hi" }
-        )
-        max_tokens = 1
-    } | ConvertTo-Json -Depth 3
     
     try {
         $headers = @{
@@ -406,7 +326,7 @@ function Test-ApiKey {
             "Content-Type" = "application/json"
         }
         
-        $response = Invoke-RestMethod -Uri "$API_BASE_URL/chat/completions" -Method Post -Headers $headers -Body $payload -ErrorAction Stop
+        $response = Invoke-RestMethod -Uri "$API_BASE_URL/models" -Method Get -Headers $headers -ErrorAction Stop
         
         Write-Host "[OK] Success." -ForegroundColor Green
         return $true
@@ -422,6 +342,53 @@ function Test-ApiKey {
             return $false
         }
         
+        $force = Read-Host "Force continue? (y/N)"
+        if ($force -eq "y" -or $force -eq "Y") {
+            return $true
+        }
+        return $false
+    }
+}
+
+function Test-ModelConnectivity {
+    param(
+        [string]$ApiKey,
+        [string]$ModelId = "gpt-5.4",
+        [switch]$Silent
+    )
+
+    Write-Host "[*] Testing model connectivity... " -NoNewline
+
+    $payload = @{
+        model = $ModelId
+        messages = @(
+            @{ role = "user"; content = "hi" }
+        )
+        max_tokens = 1
+    } | ConvertTo-Json -Depth 3
+
+    try {
+        $headers = @{
+            "Authorization" = "Bearer $ApiKey"
+            "Content-Type" = "application/json"
+        }
+
+        $response = Invoke-RestMethod -Uri "$API_BASE_URL/chat/completions" -Method Post -Headers $headers -Body $payload -ErrorAction Stop
+
+        Write-Host "[OK] Success." -ForegroundColor Green
+        return $true
+    } catch {
+        $statusCode = "Unknown"
+        if ($_.Exception.Response) {
+            $statusCode = [int]$_.Exception.Response.StatusCode
+        }
+        Write-Host "[!] Failed (HTTP $statusCode)." -ForegroundColor Yellow
+        Write-Host "Possible reasons: Model unavailable, insufficient balance, wrong model name, or network issue."
+
+        if ($Silent) {
+            return $false
+        }
+
         $force = Read-Host "Force continue? (y/N)"
         if ($force -eq "y" -or $force -eq "Y") {
             return $true
@@ -580,12 +547,29 @@ function Show-ModelMenu {
     }
 }
 
+function Get-ConfiguredModels {
+    $apiKey = Get-CurrentApiKey -FilePath $CONFIG_FILE
+    if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        throw "No configured API Key found."
+    }
+
+    return @(Get-RemoteModels -ApiKey $apiKey)
+}
+
 function Show-SwitchModelMenu {
-    $providers = @("DeepSeek", "Anthropic", "Google", "Minimax", "Moonshot", "OpenAI", "ByteDance", "Z.Ai", "Qwen")
+    try {
+        $models = Get-ConfiguredModels
+    } catch {
+        Write-ColorOutput "Failed to fetch model list in realtime. Please check API Key and network." "Error"
+        Read-Host "Press Enter to continue..."
+        return
+    }
+
+    $providers = @($models | Select-Object -ExpandProperty provider -Unique)
     
     while ($true) {
         Write-Host ""
-        Write-Host "=== Switch Default Model (by Provider) ===" -ForegroundColor Cyan
+        Write-Host "=== Switch Default Model (Realtime) ===" -ForegroundColor Cyan
         
         $i = 1
         foreach ($provider in $providers) {
@@ -602,7 +586,7 @@ function Show-SwitchModelMenu {
                 return
             } elseif ($idx -ge 1 -and $idx -le $providers.Count) {
                 $providerName = $providers[$idx - 1]
-                $modelList = Get-ModelList -Provider $providerName
+                $modelList = @($models | Where-Object { $_.provider -eq $providerName })
                 Show-ModelMenu -Provider $providerName -ModelList $modelList
             }
         } else {
@@ -622,7 +606,7 @@ function Invoke-TestConnectivity {
     $realModelId = $currentModel -replace "^realmrouter/", ""
     
     if ([string]::IsNullOrWhiteSpace($realModelId)) {
-        $realModelId = "qwen3-max"
+        $realModelId = $DEFAULT_MODEL_ID
     }
     
     if ([string]::IsNullOrWhiteSpace($currentKey)) {
@@ -637,7 +621,7 @@ function Invoke-TestConnectivity {
     Write-Host "Test Model: $realModelId"
     Write-Host "----------------------------------------"
     
-    $result = Test-ApiKey -ApiKey $currentKey -ModelId $realModelId -Silent
+    $result = Test-ModelConnectivity -ApiKey $currentKey -ModelId $realModelId -Silent
     
     Write-Host "----------------------------------------"
     if ($result) {
