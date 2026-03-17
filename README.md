@@ -14,10 +14,10 @@
 
 ## 功能特性
 
-*   **一键安装/重置**: 自动将 RealmRouter 的配置（包括最新的模型列表）注入到 `openclaw.json` 配置文件中。
-*   **模型切换**: 支持按发行商（Anthropic、DeepSeek、Google、OpenAI 等）分类浏览并切换默认 AI 模型，并内置最新的 `claude-haiku-4.5`、`claude-sonnet-4-5`、`gpt-5.4` 等模型。
-*   **API Key 管理**: 方便地更新和验证 RealmRouter API Key。
-*   **智能连通性测试**: 使用当前选中的模型真实调用 API，检测 Key 的有效性及网络连通状况，快速排查问题。
+*   **一键安装/重置**: 自动将 RealmRouter 的配置注入到 `openclaw.json`，并同步写入当前服务端返回的最新模型列表。
+*   **模型切换**: 支持按发行商分类浏览模型，菜单会在运行时实时请求 RealmRouter 的 `/v1/models`，避免内置列表过期。
+*   **API Key 管理**: 使用 `/v1/models` 快速验证 RealmRouter API Key 是否可用，并在更新 Key 时同步刷新模型列表。
+*   **智能连通性测试**: 使用当前选中的模型真实调用 `/v1/chat/completions`，检测当前模型的可用性和网络连通状况。
 *   **配置备份与还原**: 每次修改前自动备份配置文件，支持从历史备份中一键还原，安全无忧。
 *   **脚本自动更新**: 支持从 GitHub 拉取最新版本的脚本，时刻保持功能最新。
 
@@ -77,17 +77,20 @@ cd realm_manager
 ### [1] 安装/重置
 首次使用时，请选择此选项。
 *   输入您的 RealmRouter API Key。
-*   脚本会自动验证 Key 的有效性。
-*   验证通过后，脚本会将 RealmRouter 的配置信息写入到 `~/.openclaw/openclaw.json` 中，并将默认模型设置为 `realmrouter/qwen3-max`。
+*   脚本会通过 `GET /v1/models` 自动验证 Key 的有效性。
+*   验证通过后，脚本会将 RealmRouter 的配置信息写入到 `~/.openclaw/openclaw.json` 中，并将默认模型设置为 `realmrouter/gpt-5.4`。
+*   安装过程中会同步写入当前 RealmRouter 返回的模型列表，供后续实时切换使用。
 
 ### [2] 更换 Key
 如果您的 API Key 发生变更或失效，使用此选项更新。
 *   输入新的 API Key。
 *   验证成功后自动更新配置文件。
+*   更新 Key 时会重新拉取最新模型列表并写回配置。
 
 ### [3] 切换模型
 想要更换 OpenClaw 使用的默认 AI 模型时使用。
-*   脚本提供了按发行商分类的模型列表（如 Anthropic, DeepSeek, Google, OpenAI 等）。
+*   脚本会读取当前配置中的 RealmRouter API Key，并实时请求 `/v1/models` 获取最新模型列表。
+*   模型列表会按发行商自动分组显示，避免因脚本内置列表过期而切换失败。
 *   选择对应的分类和模型后，脚本会自动修改配置文件中的默认模型。
 
 ### [4] 还原备份
@@ -98,13 +101,15 @@ cd realm_manager
 ### [5] 测试连通
 当您遇到模型无法回答或报错时，使用此功能进行诊断。
 *   脚本会自动读取当前配置的 API Key 和 **当前选中的默认模型**。
-*   发起真实的对话请求（发送 "hi"）来测试服务器响应。
-*   如果是模型 ID 问题或 Key 失效，这里会直接给出错误提示。
+*   先用 `/v1/models` 验证 Key，再对当前模型发起真实的对话请求（发送 "hi"）测试服务器响应。
+*   如果当前模型不可用、模型 ID 不存在或网络异常，这里会直接给出错误提示。
 
 ### [6] 更新脚本
 检查并下载脚本的最新版本，确保您拥有最新的模型列表和功能修复。
 
 ## ⚠️ 重要提示
+
+如果 `~/.openclaw/openclaw.json` 或 `%USERPROFILE%\.openclaw\openclaw.json` 已损坏、不是合法 JSON，脚本会明确提示配置文件损坏。此时请优先执行 **[1] 安装/重置** 重新生成配置，而不是误判为网络问题。
 
 每次使用本工具修改配置（如安装、切换模型、更换 Key）后，**必须手动重启 OpenClaw 网关**才能使更改生效：
 
@@ -130,57 +135,11 @@ openclaw gateway restart
 
 ## 支持的模型
 
-目前脚本内置支持多种主流模型，包括但不限于：
+脚本不再内置固定模型清单，而是在运行时直接读取 RealmRouter `/v1/models` 返回结果。
 
-### DeepSeek
-*   `deepseek-ai/DeepSeek-R1`
-*   `deepseek-ai/DeepSeek-R1-0528`
-*   `deepseek-ai/DeepSeek-V3.1`
-*   `deepseek-ai/DeepSeek-V3.1-Terminus`
-*   `deepseek-ai/DeepSeek-V3.2-Exp`
-
-### Google
-*   `gemini-3.1-pro-high`
-*   `gemini-3.1-pro-low`
-
-### Minimax
-*   `MiniMaxAI/MiniMax-M2.1`
-*   `MiniMaxAI/MiniMax-M2.5`
-
-### Moonshot
-*   `moonshotai/Kimi-K2.5`
-*   `moonshotai/Kimi-K2-Thinking`
-
-### Anthropic
-*   `claude-haiku-4.5`
-*   `claude-sonnet-4-5`
-
-### OpenAI
-*   `gpt-5.2`
-*   `gpt-5.2-codex`
-*   `gpt-5.3-codex`
-*   `gpt-5.4`
-*   `openai/gpt-oss-120b`
-
-### 字节跳动 (ByteDance)
-*   `doubao-seed-code-preview-251028`
-
-### Z.Ai (GLM)
-*   `zai-org/GLM-4.7`
-*   `zai-org/GLM-4.6V`
-*   `zai-org/GLM-5`
-
-### Qwen (通义千问)
-*   `qwen3-coder-plus`
-*   `qwen3-max` (默认)
-*   `qwen3-max-preview`
-*   `qwen3-vl-plus`
-*   `Qwen/Qwen3-Coder-480B-A35B-Instruct`
-*   `Qwen/Qwen3-Coder-Next`
-*   `Qwen/Qwen3.5`
-*   `qwen3-vl-max`
-
-*(具体模型列表请以脚本内实际显示为准)*
+*   默认模型为 `gpt-5.4`
+*   切换模型菜单会实时显示当前账号真正可用的模型
+*   具体模型数量、名称和发行商分组会随 RealmRouter 服务端更新而变化
 
 ## 免责声明
 

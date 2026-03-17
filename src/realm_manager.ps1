@@ -192,7 +192,8 @@ function Install-RealmRouter {
         $jsonContent = Get-Content $FilePath -Raw
         $json = $jsonContent | ConvertFrom-Json
     } catch {
-        Write-ColorOutput "JSON parse failed, config file may be corrupted." "Error"
+        Write-ColorOutput "Config file is corrupted: $FilePath" "Error"
+        Write-Host "Please run [1] Install/Reset first to rebuild a valid config."
         return $false
     }
     
@@ -309,6 +310,43 @@ function Get-CurrentModel {
         return $jsonObj.agents.defaults.model.primary
     } catch {
         return $null
+    }
+}
+
+function Get-ConfigState {
+    param([string]$FilePath)
+
+    try {
+        $jsonContent = Get-Content $FilePath -Raw
+        $jsonObj = $jsonContent | ConvertFrom-Json
+    } catch {
+        return "invalid_json"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($jsonObj.models.providers.realmrouter.apiKey)) {
+        return "missing_key"
+    }
+
+    return "ok"
+}
+
+function Show-ConfigGuidance {
+    $configState = Get-ConfigState -FilePath $CONFIG_FILE
+
+    switch ($configState) {
+        "invalid_json" {
+            Write-ColorOutput "Config file is corrupted: $CONFIG_FILE" "Error"
+            Write-Host "Please run [1] Install/Reset first to rebuild a valid config."
+            return $true
+        }
+        "missing_key" {
+            Write-ColorOutput "No RealmRouter API Key is currently configured." "Error"
+            Write-Host "Please run [1] Install/Reset or [2] Change Key first."
+            return $true
+        }
+        default {
+            return $false
+        }
     }
 }
 
@@ -560,7 +598,9 @@ function Show-SwitchModelMenu {
     try {
         $models = Get-ConfiguredModels
     } catch {
-        Write-ColorOutput "Failed to fetch model list in realtime. Please check API Key and network." "Error"
+        if (-not (Show-ConfigGuidance)) {
+            Write-ColorOutput "Failed to fetch model list in realtime. Please check network and try again." "Error"
+        }
         Read-Host "Press Enter to continue..."
         return
     }
@@ -610,8 +650,10 @@ function Invoke-TestConnectivity {
     }
     
     if ([string]::IsNullOrWhiteSpace($currentKey)) {
-        Write-ColorOutput "Error: No configured API Key found." "Error"
-        Write-Host "Please run [1] Install/Reset or [2] Change Key first."
+        if (-not (Show-ConfigGuidance)) {
+            Write-ColorOutput "Error: No configured API Key found." "Error"
+            Write-Host "Please run [1] Install/Reset or [2] Change Key first."
+        }
         Read-Host "Press Enter to return..."
         return
     }

@@ -189,6 +189,19 @@ def action_get_model(file_path):
     except Exception:
         sys.exit(1)
 
+def action_config_state(file_path):
+    try:
+        data = load_json(file_path)
+    except SystemExit:
+        print("invalid_json")
+        return
+
+    api_key = data.get('models', {}).get('providers', {}).get('realmrouter', {}).get('apiKey')
+    if api_key:
+        print("ok")
+    else:
+        print("missing_key")
+
 def action_list_providers(file_path):
     data = load_json(file_path)
     api_key = data.get('models', {}).get('providers', {}).get('realmrouter', {}).get('apiKey')
@@ -234,6 +247,8 @@ if __name__ == "__main__":
         action_get_key(file_path)
     elif action == "get_model":
         action_get_model(file_path)
+    elif action == "config_state":
+        action_config_state(file_path)
     elif action == "list_providers":
         action_list_providers(file_path)
     elif action == "list_models_by_provider":
@@ -256,6 +271,29 @@ check_env() {
         echo "请确保 OpenClaw 已安装并初始化。"
         exit 1
     fi
+}
+
+get_config_state() {
+    python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "config_state" 2>/dev/null
+}
+
+show_config_guidance() {
+    local state
+    state=$(get_config_state)
+
+    if [ "$state" = "invalid_json" ]; then
+        echo "❌ 检测到配置文件已损坏: $CONFIG_FILE"
+        echo "请先执行 [1] 安装/重置，重新生成有效配置。"
+        return 0
+    fi
+
+    if [ "$state" = "missing_key" ]; then
+        echo "❌ 当前未检测到已配置的 RealmRouter API Key。"
+        echo "请先执行 [1] 安装/重置 或 [2] 更换 Key。"
+        return 0
+    fi
+
+    return 1
 }
 
 backup_config() {
@@ -418,7 +456,10 @@ process_switch_model_menu() {
     local provider_lines
     provider_lines=$(python3 -c "$PYTHON_SCRIPT" "$CONFIG_FILE" "list_providers" 2>/dev/null)
     if [ -z "$provider_lines" ]; then
-        echo -e "\n❌ 无法实时获取模型列表。请先确认已配置 API Key 且网络正常。"
+        echo ""
+        if ! show_config_guidance; then
+            echo "❌ 无法实时获取模型列表。请确认网络正常后重试。"
+        fi
         read -p "按回车键继续..."
         return
     fi
@@ -507,8 +548,10 @@ process_test_connectivity() {
     fi
 
     if [ -z "$current_key" ]; then
-        echo "❌ Error: 未找到已配置的 API Key。"
-        echo "请先执行 [1] 安装/重置 或 [2] 更换 Key。"
+        if ! show_config_guidance; then
+            echo "❌ Error: 未找到已配置的 API Key。"
+            echo "请先执行 [1] 安装/重置 或 [2] 更换 Key。"
+        fi
         read -p "按回车键返回..."
         return
     fi
